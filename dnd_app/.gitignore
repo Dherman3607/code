@@ -1,0 +1,35 @@
+# Flutter/Dart/Pub
+.dart_tool/
+.packages
+.pub/
+build/
+flutter_*.png
+
+# Visual Studio Code
+.vscode/
+
+# Android
+**/android/**/local.properties
+**/android/**//*.iml
+**/android/**/.gradle
+**/android/**/build/
+**/android/**/captures/
+
+# IntelliJ
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# macOS
+.DS_Store
+
+# Logs
+**/logs/
+
+# Generated files
+pubspec.lock
+
+# JetBrains
+*.iml
+.idea/

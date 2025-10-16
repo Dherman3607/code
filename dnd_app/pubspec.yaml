@@ -1,0 +1,17 @@
+name: dnd_app
+description: A new Flutter project created as a starter for Android development.
+publish_to: 'none'
+version: 1.0.0+1
+environment:
+  sdk: ">=2.17.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
