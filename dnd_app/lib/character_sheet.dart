@@ -56,7 +56,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
     setState(() => _loadingClasses = true);
     try {
       final classes = await DnDClassLoader.loadClasses(
-          'test/Data/dnd-export-complete-2025-10-10.json');
+          'lib/Data/dnd-export-complete-2025-10-10.json');
       setState(() {
         _classList = classes;
         _loadingClasses = false;
@@ -238,13 +238,32 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                     onPressed:
                                         _classList == null || _loadingClasses
                                             ? null
-                                            : () {},
+                                            : () async {
+                                                // open selector dialog
+                                                final selected =
+                                                    await showDialog<DnDClass>(
+                                                  context: context,
+                                                  builder: (ctx) =>
+                                                      ClassSelectorMenu(
+                                                    classes: _classList!,
+                                                    onSelected: (c) {
+                                                      Navigator.of(ctx).pop(c);
+                                                    },
+                                                  ),
+                                                );
+                                                if (selected != null) {
+                                                  setState(() {
+                                                    _selectedClassName =
+                                                        selected.name;
+                                                  });
+                                                }
+                                              },
                                     icon: Icon(Icons.arrow_drop_down),
                                     label: Text(
                                       _selectedClassName ??
                                           (_loadingClasses
                                               ? 'Loading...'
-                                              : 'SELECT'),
+                                              : 'Class'),
                                       style: TextStyle(
                                         color: _selectedClassName != null
                                             ? Colors.white
