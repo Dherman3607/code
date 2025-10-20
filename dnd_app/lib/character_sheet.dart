@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'class_selector_menu.dart';
 import 'classes.dart';
+import 'race_selector_menu.dart';
+import 'races.dart';
+import 'utils/trait_formatter.dart';
 
 class CharacterSheet extends StatefulWidget {
   @override
@@ -35,8 +38,15 @@ class _CharacterSheetState extends State<CharacterSheet> {
   late TextEditingController _levelController;
   final Map<String, TextEditingController> _abilityControllers = {};
   String? _selectedClassName;
+  String? _selectedRaceName;
   List<DnDClass>? _classList;
+  List<DnDRace>? _raceList;
+  DnDClass? _selectedClass;
+  DnDRace? _selectedRace;
   bool _loadingClasses = false;
+  bool _loadingRaces = false;
+  // Track previously applied race bonuses so selecting a new race removes old bonuses
+  final Map<String, int> _appliedRaceBonuses = {};
 
   @override
   void initState() {
@@ -48,8 +58,24 @@ class _CharacterSheetState extends State<CharacterSheet> {
     _levelController = TextEditingController(text: '1');
     for (var a in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']) {
       _abilityControllers[a] = TextEditingController(text: '10');
+      _appliedRaceBonuses[a] = 0;
     }
     _loadClasses();
+    _loadRaces();
+  }
+
+  Future<void> _loadRaces() async {
+    setState(() => _loadingRaces = true);
+    try {
+      final races = await DnDRaceLoader.loadRaces(
+          'lib/Data/dnd-export-complete-2025-10-10.json');
+      setState(() {
+        _raceList = races;
+        _loadingRaces = false;
+      });
+    } catch (e) {
+      setState(() => _loadingRaces = false);
+    }
   }
 
   Future<void> _loadClasses() async {
@@ -63,6 +89,36 @@ class _CharacterSheetState extends State<CharacterSheet> {
       });
     } catch (e) {
       setState(() => _loadingClasses = false);
+    }
+  }
+
+  void _applyRaceBonuses(DnDRace race) {
+    // Remove previous bonuses
+    _appliedRaceBonuses.forEach((abbr, bonus) {
+      if (bonus != 0) {
+        final controller = _abilityControllers[abbr];
+        if (controller != null) {
+          final base = int.tryParse(controller.text) ?? 10;
+          controller.text = (base - bonus).toString();
+        }
+      }
+      _appliedRaceBonuses[abbr] = 0;
+    });
+
+    // Try to parse abilityScoreIncrease trait which often looks like "+2 DEX, +1 INT"
+    final trait = race.traits['abilityScoreIncrease'];
+    if (trait is String) {
+      final re = RegExp(r"([+-]?\d+)\s*([A-Za-z]{3})");
+      for (final m in re.allMatches(trait)) {
+        final val = int.tryParse(m.group(1) ?? '0') ?? 0;
+        final abbr = (m.group(2) ?? '').toUpperCase();
+        if (_abilityControllers.containsKey(abbr)) {
+          final controller = _abilityControllers[abbr]!;
+          final base = int.tryParse(controller.text) ?? 10;
+          controller.text = (base + val).toString();
+          _appliedRaceBonuses[abbr] = val;
+        }
+      }
     }
   }
 
@@ -115,13 +171,13 @@ class _CharacterSheetState extends State<CharacterSheet> {
     );
   }
 
-  Widget _buildCombatStat(String name, String subtitle) {
+  Widget _buildCombatStat(String name, String subtitle, {String? value}) {
     return Column(
       children: [
         Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
         if (subtitle.isNotEmpty) Text(subtitle, style: TextStyle(fontSize: 12)),
         SizedBox(height: 4),
-        Text('___', style: TextStyle(fontSize: 18)),
+        Text(value ?? '___', style: TextStyle(fontSize: 18)),
       ],
     );
   }
@@ -274,7 +330,53 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                   ),
                                 ),
                                 SizedBox(width: 8),
-                                Expanded(child: Text('Race: __________')),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    key: const Key('raceSelectorButton'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueGrey[800],
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 12, horizontal: 8),
+                                    ),
+                                    onPressed: _raceList == null ||
+                                            _loadingRaces
+                                        ? null
+                                        : () async {
+                                            final selected =
+                                                await showDialog<DnDRace>(
+                                              context: context,
+                                              builder: (ctx) =>
+                                                  RaceSelectorMenu(
+                                                races: _raceList!,
+                                                onSelected: (r) =>
+                                                    Navigator.of(ctx).pop(r),
+                                              ),
+                                            );
+                                            if (selected != null) {
+                                              setState(() {
+                                                _applyRaceBonuses(selected);
+                                                _selectedRace = selected;
+                                                _selectedRaceName =
+                                                    selected.name;
+                                              });
+                                            }
+                                          },
+                                    icon: Icon(Icons.arrow_drop_down),
+                                    label: Text(
+                                      _selectedRaceName ??
+                                          (_loadingRaces
+                                              ? 'Loading...'
+                                              : 'Race'),
+                                      style: TextStyle(
+                                        color: _selectedRaceName != null
+                                            ? Colors.white
+                                            : Colors.white70,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                             SizedBox(height: 8),
@@ -346,9 +448,17 @@ class _CharacterSheetState extends State<CharacterSheet> {
                           children: [
                             _buildCombatStat('AC', 'Armor Class'),
                             _buildCombatStat('Initiative', ''),
-                            _buildCombatStat('Speed', ''),
+                            _buildCombatStat('Speed', '',
+                                value: _selectedRace != null
+                                    ? TraitFormatter.formatDistance(
+                                        _selectedRace!.traits['speed'])
+                                    : null),
                             _buildCombatStat('HP', 'Hit Points'),
-                            _buildCombatStat('Hit Dice', ''),
+                            _buildCombatStat('Hit Dice', '',
+                                value: _selectedClass != null
+                                    ? TraitFormatter.formatHitDie(
+                                        _selectedClass!.hitDice)
+                                    : null),
                           ],
                         ),
                       ),

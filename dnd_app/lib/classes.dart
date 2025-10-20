@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show rootBundle;
 class DnDClass {
   final String id;
   final String name;
+  final int? hitDice;
   final List<String> primaryAbility;
   final List<String> savingThrowProficiencies;
   final List<String> skillProficiencies;
@@ -16,6 +17,7 @@ class DnDClass {
   DnDClass({
     required this.id,
     required this.name,
+    this.hitDice,
     required this.primaryAbility,
     required this.savingThrowProficiencies,
     required this.skillProficiencies,
@@ -30,6 +32,11 @@ class DnDClass {
     return DnDClass(
       id: json['id'] ?? json['name'] ?? '',
       name: json['name'] ?? '',
+      hitDice: json['hitDice'] is int
+          ? json['hitDice'] as int
+          : (json['hitDice'] != null
+              ? int.tryParse(json['hitDice'].toString())
+              : null),
       primaryAbility: List<String>.from(json['primaryAbility'] ?? []),
       savingThrowProficiencies:
           List<String>.from(json['savingThrowProficiencies'] ?? []),

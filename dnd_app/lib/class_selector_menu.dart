@@ -7,7 +7,9 @@ class ClassSelectorMenu extends StatefulWidget {
   final List<DnDClass> classes;
   final OnClassSelected onSelected;
 
-  const ClassSelectorMenu({Key? key, required this.classes, required this.onSelected}) : super(key: key);
+  const ClassSelectorMenu(
+      {Key? key, required this.classes, required this.onSelected})
+      : super(key: key);
 
   @override
   _ClassSelectorMenuState createState() => _ClassSelectorMenuState();
@@ -66,11 +68,18 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
-            title: Text(c.name, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-            subtitle: c.primaryAbility.isNotEmpty ? Text('Primary: ${c.primaryAbility.map((s)=>s[0].toUpperCase()+s.substring(1)).join(', ')}', style: TextStyle(color: Colors.white70)) : null,
+            title: Text(c.name,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
+            subtitle: c.primaryAbility.isNotEmpty
+                ? Text(
+                    'Primary: ${c.primaryAbility.map((s) => s[0].toUpperCase() + s.substring(1)).join(', ')}',
+                    style: TextStyle(color: Colors.white70))
+                : null,
             trailing: IconButton(
               key: ValueKey('expand_btn_${c.id}'),
-              icon: Icon(expanded ? Icons.expand_less : Icons.expand_more, color: Colors.white),
+              icon: Icon(expanded ? Icons.expand_less : Icons.expand_more,
+                  color: Colors.white),
               onPressed: () => _toggleExpand(index),
             ),
             onTap: () => _toggleExpand(index),
@@ -82,27 +91,42 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (c.description.isNotEmpty) ...[
-                    Text(c.description, style: TextStyle(color: Colors.white70)),
+                    Text(c.description,
+                        style: TextStyle(color: Colors.white70)),
                     SizedBox(height: 8),
                   ],
                   if (c.skillProficiencies.isNotEmpty) ...[
-                    Text('Skill Proficiencies:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                    Text(c.skillProficiencies.join(', '), style: TextStyle(color: Colors.white70)),
+                    Text('Skill Proficiencies:',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text(c.skillProficiencies.join(', '),
+                        style: TextStyle(color: Colors.white70)),
                     SizedBox(height: 8),
                   ],
                   if (c.weaponProficiencies.isNotEmpty) ...[
-                    Text('Weapons:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                    Text(c.weaponProficiencies, style: TextStyle(color: Colors.white70)),
+                    Text('Weapons:',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text(c.weaponProficiencies,
+                        style: TextStyle(color: Colors.white70)),
                     SizedBox(height: 8),
                   ],
                   if (c.armorTraining.isNotEmpty) ...[
-                    Text('Armor:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                    Text(c.armorTraining, style: TextStyle(color: Colors.white70)),
+                    Text('Armor:',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text(c.armorTraining,
+                        style: TextStyle(color: Colors.white70)),
                     SizedBox(height: 8),
                   ],
                   if (c.startingEquipment.isNotEmpty) ...[
-                    Text('Starting Equipment:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                    Text(c.startingEquipment.replaceAllMapped(RegExp(r"\(A\)|\(B\)|\(C\)"), (m) => "\n${m[0]}"), style: TextStyle(color: Colors.white70)),
+                    Text('Starting Equipment:',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text(
+                        c.startingEquipment.replaceAllMapped(
+                            RegExp(r"\(A\)|\(B\)|\(C\)"), (m) => "\n${m[0]}"),
+                        style: TextStyle(color: Colors.white70)),
                     SizedBox(height: 12),
                   ],
                   Row(
@@ -151,7 +175,12 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
               padding: EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Expanded(child: Text('Select a Class', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white))),
+                  Expanded(
+                      child: Text('Select a Class',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white))),
                   IconButton(
                     key: ValueKey('close_selector_btn'),
                     icon: Icon(Icons.close, color: Colors.white),
@@ -173,7 +202,9 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
                   itemBuilder: (context, index) {
                     final cls = widget.classes[index];
                     // ensure we have a key for this index
-                    if (_cardKeys.length <= index) _cardKeys.addAll(List.generate(index - _cardKeys.length + 1, (_) => GlobalKey()));
+                    if (_cardKeys.length <= index)
+                      _cardKeys.addAll(List.generate(
+                          index - _cardKeys.length + 1, (_) => GlobalKey()));
                     return _buildCard(cls, index);
                   },
                 ),
@@ -185,4 +216,3 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
     );
   }
 }
-
