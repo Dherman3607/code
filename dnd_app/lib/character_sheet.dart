@@ -5,6 +5,8 @@ import 'classes.dart';
 import 'race_selector_menu.dart';
 import 'races.dart';
 import 'utils/trait_formatter.dart';
+import 'styles.dart';
+import 'hp_store.dart';
 
 class CharacterSheet extends StatefulWidget {
   @override
@@ -12,6 +14,7 @@ class CharacterSheet extends StatefulWidget {
 }
 
 class _CharacterSheetState extends State<CharacterSheet> {
+  // Use shared stat styles from lib/styles.dart
   final Map<String, String> _skills = {
     'Acrobatics': 'DEX',
     'Animal Handling': 'WIS',
@@ -43,6 +46,9 @@ class _CharacterSheetState extends State<CharacterSheet> {
   List<DnDRace>? _raceList;
   DnDClass? _selectedClass;
   DnDRace? _selectedRace;
+  int _maxHp = 0;
+  int _currentHp = 0;
+  // HP is now stored centrally in HpStore; local transient fields removed
   bool _loadingClasses = false;
   bool _loadingRaces = false;
   // Track previously applied race bonuses so selecting a new race removes old bonuses
@@ -60,6 +66,8 @@ class _CharacterSheetState extends State<CharacterSheet> {
       _abilityControllers[a] = TextEditingController(text: '10');
       _appliedRaceBonuses[a] = 0;
     }
+    // initialize HpStore with current local values so UI starts consistent
+    HpStore.instance.setHp(_currentHp, _maxHp);
     _loadClasses();
     _loadRaces();
   }
@@ -122,10 +130,93 @@ class _CharacterSheetState extends State<CharacterSheet> {
     }
   }
 
+  void _recalculateHp({bool preserveCurrent = true}) {
+    final level = AbilityMath.parseLevel(_levelController.text);
+    final conScore = AbilityMath.parseScore(_abilityControllers['CON']!.text);
+    final conMod = AbilityMath.modifierFromScore(conScore);
+    final hd = _selectedClass?.hitDice ?? 8;
+    // Use maximum HP for each level (take max of hit die each level)
+    // i.e., each level adds the full hit die (hd) plus the CON modifier
+    final computedMax = hd * level + conMod * level;
+    setState(() {
+      if (preserveCurrent && _currentHp > 0) {
+        // keep current but clamp to new max
+        _currentHp = _currentHp.clamp(0, computedMax);
+      } else {
+        _currentHp = computedMax;
+      }
+      _maxHp = computedMax;
+      HpStore.instance.setHp(_currentHp, _maxHp);
+    });
+  }
+
+  Future<void> _showHpPopup(BuildContext context, {bool initialHeal = true}) {
+    bool isHeal = initialHeal;
+    String amountText = '1';
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setState) {
+          return AlertDialog(
+            title: Text(isHeal ? 'Heal' : 'Damage'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ChoiceChip(
+                      label: Text('Heal'),
+                      selected: isHeal,
+                      onSelected: (v) => setState(() => isHeal = true),
+                    ),
+                    SizedBox(width: 8),
+                    ChoiceChip(
+                      label: Text('Damage'),
+                      selected: !isHeal,
+                      onSelected: (v) => setState(() => isHeal = false),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Amount',
+                    hintText: '1',
+                  ),
+                  onChanged: (v) => amountText = v,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text('Cancel')),
+              ElevatedButton(
+                onPressed: () {
+                  final n = int.tryParse(amountText) ?? 1;
+                  if (isHeal) {
+                    HpStore.instance.inc(n);
+                  } else {
+                    HpStore.instance.dec(n);
+                  }
+                  Navigator.of(ctx).pop();
+                },
+                child: Text('Apply'),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     _levelController.dispose();
+    // HpStore is a singleton; no local controllers to dispose
     for (var c in _abilityControllers.values) {
       c.dispose();
     }
@@ -164,6 +255,9 @@ class _CharacterSheetState extends State<CharacterSheet> {
             ),
             onChanged: (v) {
               setState(() {});
+              if (label == 'CON') {
+                _recalculateHp();
+              }
             },
           ),
         ),
@@ -185,26 +279,38 @@ class _CharacterSheetState extends State<CharacterSheet> {
       else
         displayValue = '—';
     }
-    // Render full-word label and value. Remove duplicate abbreviation line.
+    // Render full-word label and value. Reserve a small helper area above the label
+    // so that labels line up across the combat-stat columns. If this is Hit Points
+    // render the small helper text there; otherwise leave it empty.
     final topLabel = subtitle.isNotEmpty ? subtitle : name;
+    const double helperHeight = 18.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Full word label (bold)
-        Text(topLabel,
-            style: TextStyle(fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center),
-        // Slightly smaller gap before subtitle for consistent vertical rhythm
+        SizedBox(
+          height: helperHeight,
+          child: Center(
+            child: topLabel.toLowerCase() == 'hit points'
+                ? Text('Current/max',
+                    style: TextStyle(fontSize: 11, color: Colors.white70))
+                : SizedBox.shrink(),
+          ),
+        ),
+        // Full word label (bold) - aligned by baseline
+        Baseline(
+          baseline: 20.0,
+          baselineType: TextBaseline.alphabetic,
+          child: Text(topLabel,
+              style: TextStyle(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center),
+        ),
         SizedBox(height: 4),
-        // For Hit Points, show a small 'Current/max' guideline under the label
-        if (topLabel.toLowerCase() == 'hit points') ...[
-          Text('Current/max',
-              style: TextStyle(fontSize: 11, color: Colors.white70)),
-          // Bring the value closer to the subtitle
-          SizedBox(height: 4),
-        ],
-        // Value
-        Text(displayValue, style: TextStyle(fontSize: 18)),
+        // Value - align by baseline with labels
+        Baseline(
+          baseline: StatStyles.baseline,
+          baselineType: TextBaseline.alphabetic,
+          child: Text(displayValue, style: StatStyles.textStyle),
+        ),
       ],
     );
   }
@@ -262,7 +368,8 @@ class _CharacterSheetState extends State<CharacterSheet> {
           ),
           Positioned.fill(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(8),
+              // add top padding to avoid overlapping the centered circular HP card
+              padding: EdgeInsets.fromLTRB(8, 180, 8, 8),
               physics: BouncingScrollPhysics(),
               child: Theme(
                 data: Theme.of(context).copyWith(
@@ -338,6 +445,9 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                                   setState(() {
                                                     _selectedClassName =
                                                         selected.name;
+                                                    _selectedClass = selected;
+                                                    _recalculateHp(
+                                                        preserveCurrent: false);
                                                   });
                                                 }
                                               },
@@ -433,7 +543,12 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                             border: InputBorder.none,
                                             isDense: true,
                                           ),
-                                          onChanged: (_) => setState(() {}),
+                                          onChanged: (v) {
+                                            setState(() {
+                                              // level updated; recalc HP
+                                            });
+                                            _recalculateHp();
+                                          },
                                         ),
                                       ),
                                     ],
@@ -472,6 +587,8 @@ class _CharacterSheetState extends State<CharacterSheet> {
                         title: 'Combat Stats',
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
                           children: [
                             _buildCombatStat('AC', 'Armor Class'),
                             _buildCombatStat('Initiative', ''),
@@ -480,7 +597,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                     ? TraitFormatter.formatDistance(
                                         _selectedRace!.traits['speed'])
                                     : null),
-                            _buildCombatStat('HP', 'Hit Points'),
+                            SizedBox(width: 56),
                             _buildCombatStat('Hit Dice', '',
                                 value: _selectedClass != null
                                     ? TraitFormatter.formatHitDie(
@@ -491,6 +608,108 @@ class _CharacterSheetState extends State<CharacterSheet> {
                       ),
                       // Add additional sections here as needed
                     ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Centered circular HP control at top — larger, circular, with a white middle band
+          Positioned(
+            left: 8,
+            right: 8,
+            top: 8,
+            child: Card(
+              color: Colors.transparent,
+              elevation: 6,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                child: Center(
+                  child: Container(
+                    width: 140,
+                    height: 140,
+                    // outer border for the circle
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black87, width: 3),
+                    ),
+                    child: ClipOval(
+                      child: Stack(
+                        children: [
+                          // top (green) and bottom (red) halves
+                          Column(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () =>
+                                      _showHpPopup(context, initialHeal: true),
+                                  child: Container(
+                                    color: Colors.green[600],
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () =>
+                                      _showHpPopup(context, initialHeal: false),
+                                  child: Container(
+                                    color: Colors.red[700],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // HP label in the green half (top) and numbers in the red half (bottom)
+                          // Use Align to position them separately and add drop shadows for contrast
+                          IgnorePointer(
+                            child: Align(
+                              alignment: Alignment(0, -0.5),
+                              child: Text(
+                                'HP',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black54,
+                                      offset: Offset(0, 1),
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          IgnorePointer(
+                            child: Align(
+                              alignment: Alignment(0, 0.5),
+                              child: AnimatedBuilder(
+                                animation: HpStore.instance,
+                                builder: (ctx, __) => Text(
+                                  '${HpStore.instance.current} / ${HpStore.instance.max}',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black87,
+                                        offset: Offset(0, 1.5),
+                                        blurRadius: 3,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
