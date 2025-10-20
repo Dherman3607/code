@@ -172,12 +172,39 @@ class _CharacterSheetState extends State<CharacterSheet> {
   }
 
   Widget _buildCombatStat(String name, String subtitle, {String? value}) {
+    // Default placeholders (remove temporary underscores)
+    String displayValue = value ?? '';
+    final key = name.toLowerCase();
+    if (displayValue.isEmpty) {
+      if (key == 'ac')
+        displayValue = '10';
+      else if (key == 'initiative')
+        displayValue = '+0';
+      else if (key == 'speed')
+        displayValue = '30 ft';
+      else
+        displayValue = '—';
+    }
+    // Render full-word label and value. Remove duplicate abbreviation line.
+    final topLabel = subtitle.isNotEmpty ? subtitle : name;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
-        if (subtitle.isNotEmpty) Text(subtitle, style: TextStyle(fontSize: 12)),
+        // Full word label (bold)
+        Text(topLabel,
+            style: TextStyle(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center),
+        // Slightly smaller gap before subtitle for consistent vertical rhythm
         SizedBox(height: 4),
-        Text(value ?? '___', style: TextStyle(fontSize: 18)),
+        // For Hit Points, show a small 'Current/max' guideline under the label
+        if (topLabel.toLowerCase() == 'hit points') ...[
+          Text('Current/max',
+              style: TextStyle(fontSize: 11, color: Colors.white70)),
+          // Bring the value closer to the subtitle
+          SizedBox(height: 4),
+        ],
+        // Value
+        Text(displayValue, style: TextStyle(fontSize: 18)),
       ],
     );
   }
