@@ -8,6 +8,7 @@ import 'races.dart';
 import 'utils/trait_formatter.dart';
 import 'hp_store.dart';
 import 'backgrounds.dart';
+import 'money_equipment.dart';
 
 // Clean, minimal CharacterSheet implementation.
 class CharacterSheet extends StatefulWidget {
@@ -36,14 +37,18 @@ class _CharacterSheetState extends State<CharacterSheet> {
   String? _selectedRaceName;
   List<DnDBackground>? _backgroundList;
   DnDBackground? _selectedBackground;
-  String? _selectedBackgroundName;
+
   @override
   void initState() {
     super.initState();
     HpStore.instance.setHp(0, 0);
     _loadClasses();
     _loadRaces();
+    _pageController = PageController();
   }
+
+  late PageController _pageController;
+  int _pageIndex = 0;
 
   Future<void> _loadClasses() async {
     try {
@@ -291,7 +296,6 @@ class _CharacterSheetState extends State<CharacterSheet> {
     if (selected != null) {
       setState(() {
         _selectedBackground = selected;
-        _selectedBackgroundName = selected.name;
       });
     }
   }
@@ -448,240 +452,291 @@ class _CharacterSheetState extends State<CharacterSheet> {
             ),
           ),
 
-          // main content
+          // main content as pages
           Positioned.fill(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(8, 160, 8, 24),
-              child: Column(
-                children: [
-                  _sectionCard(
-                    title: 'Character Info',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (i) => setState(() => _pageIndex = i),
+              children: [
+                // original character sheet content wrapped
+                SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(8, 160, 8, 24),
+                  child: Column(
+                    children: [
+                      _sectionCard(
+                        title: 'Character Info',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  Text('Name:',
-                                      style: TextStyle(color: Colors.white)),
-                                  SizedBox(width: 8),
-                                  Expanded(
-                                    child: TextField(
-                                        controller: _nameController,
-                                        style: TextStyle(color: Colors.white),
-                                        decoration: InputDecoration(
-                                            border: InputBorder.none,
-                                            hintText: 'Name')),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Text('Name:',
+                                          style:
+                                              TextStyle(color: Colors.white)),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: TextField(
+                                            controller: _nameController,
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                            decoration: InputDecoration(
+                                                border: InputBorder.none,
+                                                hintText: 'Name')),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        // Level + HD directly under Name (moved here)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text('Level:',
-                                style: TextStyle(color: Colors.white)),
-                            SizedBox(width: 8),
-                            SizedBox(
-                              width: 48,
-                              child: TextField(
-                                controller: _levelController,
-                                keyboardType: TextInputType.number,
-                                decoration:
-                                    InputDecoration(border: InputBorder.none),
-                                style: TextStyle(color: Colors.white),
-                                onChanged: (_) => _recalculateHp(),
-                              ),
-                            ),
-                            SizedBox(width: 16),
-                            Text(
-                              _selectedClass != null
-                                  ? 'HD: ${TraitFormatter.formatHitDie(_selectedClass!.hitDice)}'
-                                  : 'HD: —',
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            Spacer(),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueGrey[800],
-                                  foregroundColor: Colors.white,
-                                  shape: const StadiumBorder(),
-                                  side: BorderSide(color: Colors.white24),
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: 12, horizontal: 8),
                                 ),
-                                onPressed: _classList == null
-                                    ? null
-                                    : () async {
-                                        final selected = await showDialog<
-                                                DnDClass>(
-                                            context: context,
-                                            builder: (_) => ClassSelectorMenu(
-                                                classes: _classList!,
-                                                onSelected: (c) =>
-                                                    Navigator.of(context)
-                                                        .pop(c)));
-                                        if (selected != null)
-                                          setState(() {
-                                            _selectedClass = selected;
-                                            _selectedClassName = selected.name;
-                                            _recalculateHp(
-                                                preserveCurrent: false);
-                                          });
-                                      },
-                                child: Text(_selectedClassName ??
-                                    (_classList == null
-                                        ? 'Loading...'
-                                        : 'Class')),
-                              ),
+                              ],
                             ),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueGrey[800],
-                                  foregroundColor: Colors.white,
-                                  shape: const StadiumBorder(),
-                                  side: BorderSide(color: Colors.white24),
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: 12, horizontal: 8),
-                                ),
-                                onPressed: _raceList == null
-                                    ? null
-                                    : () async {
-                                        final selected = await showDialog<
-                                                DnDRace>(
-                                            context: context,
-                                            builder: (_) => RaceSelectorMenu(
-                                                races: _raceList!,
-                                                onSelected: (r) =>
-                                                    Navigator.of(context)
-                                                        .pop(r)));
-                                        if (selected != null)
-                                          setState(() {
-                                            _selectedRace = selected;
-                                            _selectedRaceName = selected.name;
-                                          });
-                                      },
-                                child: Text(_selectedRaceName ??
-                                    (_raceList == null
-                                        ? 'Loading...'
-                                        : 'Race')),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueGrey[800],
-                                  foregroundColor: Colors.white,
-                                  shape: const StadiumBorder(),
-                                  side: BorderSide(color: Colors.white24),
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: 12, horizontal: 8),
-                                ),
-                                onPressed: _backgroundList == null
-                                    ? null
-                                    : () => _showBackgroundSelector(context),
-                                child: Text(
-                                    _selectedBackgroundName ?? 'Background',
+                            SizedBox(height: 8),
+                            // Level + HD directly under Name (moved here)
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text('Level:',
                                     style: TextStyle(color: Colors.white)),
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueGrey[800],
-                                  foregroundColor: Colors.white,
-                                  shape: const StadiumBorder(),
-                                  side: BorderSide(color: Colors.white24),
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: 12, horizontal: 8),
+                                SizedBox(width: 8),
+                                SizedBox(
+                                  width: 48,
+                                  child: TextField(
+                                    controller: _levelController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                        border: InputBorder.none),
+                                    style: TextStyle(color: Colors.white),
+                                    onChanged: (_) => _recalculateHp(),
+                                  ),
                                 ),
-                                onPressed: () {},
-                                child: Text('Alignment',
-                                    style: TextStyle(color: Colors.white)),
-                              ),
+                                SizedBox(width: 16),
+                                Text(
+                                  _selectedClass != null
+                                      ? 'HD: ${TraitFormatter.formatHitDie(_selectedClass!.hitDice)}'
+                                      : 'HD: —',
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                                Spacer(),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueGrey[800],
+                                      foregroundColor: Colors.white,
+                                      shape: const StadiumBorder(),
+                                      side: BorderSide(color: Colors.white24),
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 12, horizontal: 8),
+                                    ),
+                                    onPressed: _classList == null
+                                        ? null
+                                        : () async {
+                                            final selected =
+                                                await showDialog<DnDClass>(
+                                                    context: context,
+                                                    builder: (_) =>
+                                                        ClassSelectorMenu(
+                                                            classes:
+                                                                _classList!,
+                                                            onSelected: (c) =>
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop(c)));
+                                            if (selected != null)
+                                              setState(() {
+                                                _selectedClass = selected;
+                                                _selectedClassName =
+                                                    selected.name;
+                                                _recalculateHp(
+                                                    preserveCurrent: false);
+                                              });
+                                          },
+                                    child: Text(_selectedClassName ??
+                                        (_classList == null
+                                            ? 'Loading...'
+                                            : 'Class')),
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueGrey[800],
+                                      foregroundColor: Colors.white,
+                                      shape: const StadiumBorder(),
+                                      side: BorderSide(color: Colors.white24),
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 12, horizontal: 8),
+                                    ),
+                                    onPressed: _raceList == null
+                                        ? null
+                                        : () async {
+                                            final selected =
+                                                await showDialog<DnDRace>(
+                                                    context: context,
+                                                    builder: (_) =>
+                                                        RaceSelectorMenu(
+                                                            races: _raceList!,
+                                                            onSelected: (r) =>
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop(r)));
+                                            if (selected != null)
+                                              setState(() {
+                                                _selectedRace = selected;
+                                                _selectedRaceName =
+                                                    selected.name;
+                                              });
+                                          },
+                                    child: Text(_selectedRaceName ??
+                                        (_raceList == null
+                                            ? 'Loading...'
+                                            : 'Race')),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueGrey[800],
+                                      foregroundColor: Colors.white,
+                                      shape: const StadiumBorder(),
+                                      side: BorderSide(color: Colors.white24),
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 12, horizontal: 8),
+                                    ),
+                                    onPressed: _backgroundList == null
+                                        ? null
+                                        : () =>
+                                            _showBackgroundSelector(context),
+                                    child: Text(
+                                        _selectedBackground?.name ??
+                                            'Background',
+                                        style: TextStyle(color: Colors.white)),
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueGrey[800],
+                                      foregroundColor: Colors.white,
+                                      shape: const StadiumBorder(),
+                                      side: BorderSide(color: Colors.white24),
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 12, horizontal: 8),
+                                    ),
+                                    onPressed: () {},
+                                    child: Text('Alignment',
+                                        style: TextStyle(color: Colors.white)),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                      _sectionCard(
+                        title: 'Ability Scores',
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
+                              .map((k) {
+                            return Column(
+                              children: [
+                                Text(k, style: TextStyle(color: Colors.white)),
+                                SizedBox(height: 6),
+                                SizedBox(
+                                  width: 48,
+                                  child: TextField(
+                                    controller: _abilityControllers[k],
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                        border: InputBorder.none),
+                                    style: TextStyle(color: Colors.white),
+                                    onChanged: (_) {
+                                      if (k == 'CON') _recalculateHp();
+                                      if (k == 'DEX') setState(() {});
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      _sectionCard(
+                        title: 'Combat Stats',
+                        child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Column(children: [
+                                Text('AC',
+                                    style: TextStyle(color: Colors.white)),
+                                SizedBox(height: 6),
+                                Text('10',
+                                    style: TextStyle(color: Colors.white))
+                              ]),
+                              Column(children: [
+                                Text('Initiative',
+                                    style: TextStyle(color: Colors.white)),
+                                SizedBox(height: 6),
+                                Text(_initiativeString(),
+                                    style: TextStyle(color: Colors.white))
+                              ]),
+                              Column(children: [
+                                Text('Speed',
+                                    style: TextStyle(color: Colors.white)),
+                                SizedBox(height: 6),
+                                Text(
+                                    _selectedRace != null
+                                        ? (TraitFormatter.formatDistance(
+                                                _selectedRace!
+                                                    .traits['speed']) ??
+                                            '30 ft')
+                                        : '30 ft',
+                                    style: TextStyle(color: Colors.white))
+                              ])
+                            ]),
+                      ),
+                      SizedBox(height: 120),
+                    ],
                   ),
-                  _sectionCard(
-                    title: 'Ability Scores',
-                    child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
-                            .map((k) => Column(children: [
-                                  Text(k,
-                                      style: TextStyle(color: Colors.white)),
-                                  SizedBox(height: 6),
-                                  SizedBox(
-                                      width: 48,
-                                      child: TextField(
-                                          controller: _abilityControllers[k],
-                                          keyboardType: TextInputType.number,
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none),
-                                          style: TextStyle(color: Colors.white),
-                                          onChanged: (_) {
-                                            if (k == 'CON') _recalculateHp();
-                                            if (k == 'DEX') setState(() {});
-                                          }))
-                                ]))
-                            .toList()),
-                  ),
-                  _sectionCard(
-                    title: 'Combat Stats',
-                    child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Column(children: [
-                            Text('AC', style: TextStyle(color: Colors.white)),
-                            SizedBox(height: 6),
-                            Text('10', style: TextStyle(color: Colors.white))
-                          ]),
-                          Column(children: [
-                            Text('Initiative',
-                                style: TextStyle(color: Colors.white)),
-                            SizedBox(height: 6),
-                            Text(_initiativeString(),
-                                style: TextStyle(color: Colors.white))
-                          ]),
-                          Column(children: [
-                            Text('Speed',
-                                style: TextStyle(color: Colors.white)),
-                            SizedBox(height: 6),
-                            Text(
-                                _selectedRace != null
-                                    ? (TraitFormatter.formatDistance(
-                                            _selectedRace!.traits['speed']) ??
-                                        '30 ft')
-                                    : '30 ft',
-                                style: TextStyle(color: Colors.white))
-                          ])
-                        ]),
-                  ),
-                  SizedBox(height: 120),
-                ],
+                ),
+
+                // Money & Equipment page
+                MoneyEquipmentPage(),
+              ],
+            ),
+          ),
+
+          // page indicator
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 120,
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(2, (i) {
+                  return Container(
+                    margin: EdgeInsets.symmetric(horizontal: 4),
+                    width: _pageIndex == i ? 12 : 8,
+                    height: _pageIndex == i ? 12 : 8,
+                    decoration: BoxDecoration(
+                        color: _pageIndex == i ? Colors.white : Colors.white24,
+                        shape: BoxShape.circle),
+                  );
+                }),
               ),
             ),
           ),
