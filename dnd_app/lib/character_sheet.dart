@@ -1,714 +1,447 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+
 import 'class_selector_menu.dart';
 import 'classes.dart';
 import 'race_selector_menu.dart';
 import 'races.dart';
 import 'utils/trait_formatter.dart';
-import 'styles.dart';
 import 'hp_store.dart';
 
+// Clean, minimal CharacterSheet implementation.
 class CharacterSheet extends StatefulWidget {
   @override
   _CharacterSheetState createState() => _CharacterSheetState();
 }
 
 class _CharacterSheetState extends State<CharacterSheet> {
-  // Use shared stat styles from lib/styles.dart
-  final Map<String, String> _skills = {
-    'Acrobatics': 'DEX',
-    'Animal Handling': 'WIS',
-    'Arcana': 'INT',
-    'Athletics': 'STR',
-    'Deception': 'CHA',
-    'History': 'INT',
-    'Insight': 'WIS',
-    'Intimidation': 'CHA',
-    'Investigation': 'INT',
-    'Medicine': 'WIS',
-    'Nature': 'INT',
-    'Perception': 'WIS',
-    'Performance': 'CHA',
-    'Persuasion': 'CHA',
-    'Religion': 'INT',
-    'Sleight of Hand': 'DEX',
-    'Stealth': 'DEX',
-    'Survival': 'WIS',
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _levelController =
+      TextEditingController(text: '1');
+  final Map<String, TextEditingController> _abilityControllers = {
+    'STR': TextEditingController(text: '10'),
+    'DEX': TextEditingController(text: '10'),
+    'CON': TextEditingController(text: '10'),
+    'INT': TextEditingController(text: '10'),
+    'WIS': TextEditingController(text: '10'),
+    'CHA': TextEditingController(text: '10'),
   };
-  final Map<String, bool> _proficiencies = {};
-  String _name = '';
-  late TextEditingController _nameController;
-  late TextEditingController _levelController;
-  final Map<String, TextEditingController> _abilityControllers = {};
-  String? _selectedClassName;
-  String? _selectedRaceName;
+
   List<DnDClass>? _classList;
   List<DnDRace>? _raceList;
   DnDClass? _selectedClass;
   DnDRace? _selectedRace;
-  int _maxHp = 0;
-  int _currentHp = 0;
-  // HP is now stored centrally in HpStore; local transient fields removed
-  bool _loadingClasses = false;
-  bool _loadingRaces = false;
-  // Track previously applied race bonuses so selecting a new race removes old bonuses
-  final Map<String, int> _appliedRaceBonuses = {};
+  String? _selectedClassName;
+  String? _selectedRaceName;
 
   @override
   void initState() {
     super.initState();
-    for (var key in _skills.keys) {
-      _proficiencies[key] = false;
-    }
-    _nameController = TextEditingController(text: _name);
-    _levelController = TextEditingController(text: '1');
-    for (var a in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']) {
-      _abilityControllers[a] = TextEditingController(text: '10');
-      _appliedRaceBonuses[a] = 0;
-    }
-    // initialize HpStore with current local values so UI starts consistent
-    HpStore.instance.setHp(_currentHp, _maxHp);
+    HpStore.instance.setHp(0, 0);
     _loadClasses();
     _loadRaces();
   }
 
-  Future<void> _loadRaces() async {
-    setState(() => _loadingRaces = true);
-    try {
-      final races = await DnDRaceLoader.loadRaces(
-          'lib/Data/dnd-export-complete-2025-10-10.json');
-      setState(() {
-        _raceList = races;
-        _loadingRaces = false;
-      });
-    } catch (e) {
-      setState(() => _loadingRaces = false);
-    }
-  }
-
   Future<void> _loadClasses() async {
-    setState(() => _loadingClasses = true);
     try {
-      final classes = await DnDClassLoader.loadClasses(
+      _classList = await DnDClassLoader.loadClasses(
           'lib/Data/dnd-export-complete-2025-10-10.json');
-      setState(() {
-        _classList = classes;
-        _loadingClasses = false;
-      });
-    } catch (e) {
-      setState(() => _loadingClasses = false);
-    }
+      setState(() {});
+    } catch (_) {}
   }
 
-  void _applyRaceBonuses(DnDRace race) {
-    // Remove previous bonuses
-    _appliedRaceBonuses.forEach((abbr, bonus) {
-      if (bonus != 0) {
-        final controller = _abilityControllers[abbr];
-        if (controller != null) {
-          final base = int.tryParse(controller.text) ?? 10;
-          controller.text = (base - bonus).toString();
-        }
-      }
-      _appliedRaceBonuses[abbr] = 0;
-    });
-
-    // Try to parse abilityScoreIncrease trait which often looks like "+2 DEX, +1 INT"
-    final trait = race.traits['abilityScoreIncrease'];
-    if (trait is String) {
-      final re = RegExp(r"([+-]?\d+)\s*([A-Za-z]{3})");
-      for (final m in re.allMatches(trait)) {
-        final val = int.tryParse(m.group(1) ?? '0') ?? 0;
-        final abbr = (m.group(2) ?? '').toUpperCase();
-        if (_abilityControllers.containsKey(abbr)) {
-          final controller = _abilityControllers[abbr]!;
-          final base = int.tryParse(controller.text) ?? 10;
-          controller.text = (base + val).toString();
-          _appliedRaceBonuses[abbr] = val;
-        }
-      }
-    }
+  Future<void> _loadRaces() async {
+    try {
+      _raceList = await DnDRaceLoader.loadRaces(
+          'lib/Data/dnd-export-complete-2025-10-10.json');
+      setState(() {});
+    } catch (_) {}
   }
 
   void _recalculateHp({bool preserveCurrent = true}) {
     final level = AbilityMath.parseLevel(_levelController.text);
-    final conScore = AbilityMath.parseScore(_abilityControllers['CON']!.text);
-    final conMod = AbilityMath.modifierFromScore(conScore);
+    final con = AbilityMath.parseScore(_abilityControllers['CON']!.text);
+    final conMod = AbilityMath.modifierFromScore(con);
     final hd = _selectedClass?.hitDice ?? 8;
-    // Use maximum HP for each level (take max of hit die each level)
-    // i.e., each level adds the full hit die (hd) plus the CON modifier
     final computedMax = hd * level + conMod * level;
-    setState(() {
-      if (preserveCurrent && _currentHp > 0) {
-        // keep current but clamp to new max
-        _currentHp = _currentHp.clamp(0, computedMax);
-      } else {
-        _currentHp = computedMax;
-      }
-      _maxHp = computedMax;
-      HpStore.instance.setHp(_currentHp, _maxHp);
-    });
+    HpStore.instance
+        .setHp(HpStore.instance.current.clamp(0, computedMax), computedMax);
+    setState(() {});
   }
 
-  Future<void> _showHpPopup(BuildContext context, {bool initialHeal = true}) {
+  Future<void> _showHpPopup(BuildContext context,
+      {bool initialHeal = true}) async {
     bool isHeal = initialHeal;
-    String amountText = '1';
-    return showDialog<void>(
+    String amount = '1';
+    await showDialog<void>(
       context: context,
-      builder: (ctx) {
-        return StatefulBuilder(builder: (ctx, setState) {
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) {
+        return AlertDialog(
+          title: Text(isHeal ? 'Heal' : 'Damage'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              ChoiceChip(
+                  label: Text('Heal'),
+                  selected: isHeal,
+                  onSelected: (_) => setState(() => isHeal = true)),
+              SizedBox(width: 8),
+              ChoiceChip(
+                  label: Text('Damage'),
+                  selected: !isHeal,
+                  onSelected: (_) => setState(() => isHeal = false)),
+            ]),
+            SizedBox(height: 12),
+            TextField(
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Amount'),
+                onChanged: (v) => amount = v),
+          ]),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text('Cancel')),
+            TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  _showHpLog(context);
+                },
+                child: Text('Log')),
+            ElevatedButton(
+                onPressed: () {
+                  final n = int.tryParse(amount) ?? 1;
+                  HpStore.instance.applyChange(isHeal ? n : -n,
+                      type: isHeal ? 'heal' : 'damage');
+                  Navigator.of(ctx).pop();
+                },
+                child: Text('Apply')),
+          ],
+        );
+      }),
+    );
+  }
+
+  Future<void> _showHpLog(BuildContext context) async {
+    await showDialog<void>(
+        context: context,
+        builder: (ctx) {
           return AlertDialog(
-            title: Text(isHeal ? 'Heal' : 'Damage'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ChoiceChip(
-                      label: Text('Heal'),
-                      selected: isHeal,
-                      onSelected: (v) => setState(() => isHeal = true),
-                    ),
-                    SizedBox(width: 8),
-                    ChoiceChip(
-                      label: Text('Damage'),
-                      selected: !isHeal,
-                      onSelected: (v) => setState(() => isHeal = false),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12),
-                TextField(
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Amount',
-                    hintText: '1',
-                  ),
-                  onChanged: (v) => amountText = v,
-                ),
-              ],
-            ),
+            title: Text('HP Log'),
+            content: SizedBox(
+                width: 360,
+                child: AnimatedBuilder(
+                    animation: HpStore.instance,
+                    builder: (_, __) {
+                      final log = HpStore.instance.log;
+                      if (log.isEmpty) return Text('No entries');
+                      return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: log
+                              .map((e) => ListTile(
+                                  title: Text('${e.type} ${e.delta}'),
+                                  subtitle:
+                                      Text('${e.when} — before ${e.before}')))
+                              .toList());
+                    })),
             actions: [
               TextButton(
                   onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text('Cancel')),
-              ElevatedButton(
-                onPressed: () {
-                  final n = int.tryParse(amountText) ?? 1;
-                  if (isHeal) {
-                    HpStore.instance.inc(n);
-                  } else {
-                    HpStore.instance.dec(n);
-                  }
-                  Navigator.of(ctx).pop();
-                },
-                child: Text('Apply'),
-              ),
+                  child: Text('Close')),
+              TextButton(
+                  onPressed: () {
+                    final undone = HpStore.instance.undoLast();
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content:
+                            Text(undone ? 'Undid last' : 'Nothing to undo')));
+                  },
+                  child: Text('Undo last'))
             ],
           );
         });
-      },
-    );
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _levelController.dispose();
-    // HpStore is a singleton; no local controllers to dispose
-    for (var c in _abilityControllers.values) {
-      c.dispose();
-    }
+    for (var c in _abilityControllers.values) c.dispose();
     super.dispose();
   }
 
-  Widget _buildAbility(String label) {
-    final controller = _abilityControllers[label]!;
-    int mod =
-        AbilityMath.modifierFromScore(AbilityMath.parseScore(controller.text));
-    String modText = AbilityMath.formatModifier(mod);
-    final Color modColor = mod > 0
-        ? Colors.green.shade300
-        : (mod < 0 ? Colors.red.shade300 : Colors.white);
-    return Column(
-      children: [
-        Text(label,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        SizedBox(height: 6),
-        Text(modText,
-            style: TextStyle(
-                fontSize: 28, fontWeight: FontWeight.bold, color: modColor)),
-        SizedBox(height: 6),
-        SizedBox(
-          width: 48,
-          child: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            style: TextStyle(color: Colors.white, fontSize: 14),
-            decoration: InputDecoration(
-              hintText: '0',
-              hintStyle: TextStyle(color: Colors.white70),
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 4),
-            ),
-            onChanged: (v) {
-              setState(() {});
-              if (label == 'CON') {
-                _recalculateHp();
-              }
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCombatStat(String name, String subtitle, {String? value}) {
-    // Default placeholders (remove temporary underscores)
-    String displayValue = value ?? '';
-    final key = name.toLowerCase();
-    if (displayValue.isEmpty) {
-      if (key == 'ac')
-        displayValue = '10';
-      else if (key == 'initiative')
-        displayValue = '+0';
-      else if (key == 'speed')
-        displayValue = '30 ft';
-      else
-        displayValue = '—';
-    }
-    // Render full-word label and value. Reserve a small helper area above the label
-    // so that labels line up across the combat-stat columns. If this is Hit Points
-    // render the small helper text there; otherwise leave it empty.
-    final topLabel = subtitle.isNotEmpty ? subtitle : name;
-    const double helperHeight = 18.0;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        SizedBox(
-          height: helperHeight,
-          child: Center(
-            child: topLabel.toLowerCase() == 'hit points'
-                ? Text('Current/max',
-                    style: TextStyle(fontSize: 11, color: Colors.white70))
-                : SizedBox.shrink(),
-          ),
-        ),
-        // Full word label (bold) - aligned by baseline
-        Baseline(
-          baseline: 20.0,
-          baselineType: TextBaseline.alphabetic,
-          child: Text(topLabel,
-              style: TextStyle(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center),
-        ),
-        SizedBox(height: 4),
-        // Value - align by baseline with labels
-        Baseline(
-          baseline: StatStyles.baseline,
-          baselineType: TextBaseline.alphabetic,
-          child: Text(displayValue, style: StatStyles.textStyle),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionCard({required String title, required Widget child}) {
-    return Card(
-      color: Colors.blueGrey[800]?.withOpacity(0.8),
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 4,
-      child: Padding(
-        padding: EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
-            SizedBox(height: 8),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _sectionCard({required String title, required Widget child}) => Card(
+        color: Colors.blueGrey[800]?.withOpacity(0.9),
+        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: Padding(
+            padding: EdgeInsets.all(12),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title,
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white)),
+              SizedBox(height: 8),
+              child
+            ])),
+      );
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text('D&D Character Sheet'),
-        backgroundColor: Colors.blueGrey[900],
-      ),
+          title: Text('D&D Character Sheet'),
+          backgroundColor: Colors.blueGrey[900]),
       body: Stack(
         children: [
+          // background
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF3B4852),
-                    Color(0xFF2E3538),
-                    Color(0xFF242627)
-                  ],
-                  stops: [0.0, 0.6, 1.0],
-                ),
-              ),
-              child: CustomPaint(painter: _GrainPainter(), size: Size.infinite),
+                  gradient: LinearGradient(
+                      colors: [Color(0xFF3B4852), Color(0xFF2E3538)])),
+              child: CustomPaint(painter: _GrainPainter()),
             ),
           ),
+
+          // main content
           Positioned.fill(
             child: SingleChildScrollView(
-              // add top padding to avoid overlapping the centered circular HP card
-              padding: EdgeInsets.fromLTRB(8, 180, 8, 8),
-              physics: BouncingScrollPhysics(),
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  textTheme: Theme.of(context).textTheme.apply(
-                      bodyColor: Colors.white, displayColor: Colors.white),
-                ),
-                child: DefaultTextStyle.merge(
-                  style: TextStyle(color: Colors.white),
-                  child: Column(
-                    children: [
-                      _buildSectionCard(
-                        title: 'Character Info',
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+              padding: EdgeInsets.fromLTRB(8, 160, 8, 24),
+              child: Column(
+                children: [
+                  _sectionCard(
+                    title: 'Character Info',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Row(
-                                    children: [
-                                      Text('Name:',
-                                          style:
-                                              TextStyle(color: Colors.white)),
-                                      SizedBox(width: 6),
-                                      Expanded(
-                                        child: TextField(
-                                          controller: _nameController,
-                                          style: TextStyle(color: Colors.white),
-                                          decoration: InputDecoration(
-                                            hintText: 'Enter name',
-                                            hintStyle: TextStyle(
-                                                color: Colors.white70),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Text('Name:',
+                                      style: TextStyle(color: Colors.white)),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: TextField(
+                                        controller: _nameController,
+                                        style: TextStyle(color: Colors.white),
+                                        decoration: InputDecoration(
                                             border: InputBorder.none,
-                                            isDense: true,
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                                    vertical: 8),
-                                          ),
-                                          onChanged: (v) =>
-                                              setState(() => _name = v),
-                                        ),
-                                      ),
-                                    ],
+                                            hintText: 'Name')),
                                   ),
-                                ),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    key: const Key('classSelectorButton'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blueGrey[800],
-                                      foregroundColor: Colors.white,
-                                      padding: EdgeInsets.symmetric(
-                                          vertical: 12, horizontal: 8),
-                                    ),
-                                    onPressed:
-                                        _classList == null || _loadingClasses
-                                            ? null
-                                            : () async {
-                                                // open selector dialog
-                                                final selected =
-                                                    await showDialog<DnDClass>(
-                                                  context: context,
-                                                  builder: (ctx) =>
-                                                      ClassSelectorMenu(
-                                                    classes: _classList!,
-                                                    onSelected: (c) {
-                                                      Navigator.of(ctx).pop(c);
-                                                    },
-                                                  ),
-                                                );
-                                                if (selected != null) {
-                                                  setState(() {
-                                                    _selectedClassName =
-                                                        selected.name;
-                                                    _selectedClass = selected;
-                                                    _recalculateHp(
-                                                        preserveCurrent: false);
-                                                  });
-                                                }
-                                              },
-                                    icon: Icon(Icons.arrow_drop_down),
-                                    label: Text(
-                                      _selectedClassName ??
-                                          (_loadingClasses
-                                              ? 'Loading...'
-                                              : 'Class'),
-                                      style: TextStyle(
-                                        color: _selectedClassName != null
-                                            ? Colors.white
-                                            : Colors.white70,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    key: const Key('raceSelectorButton'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blueGrey[800],
-                                      foregroundColor: Colors.white,
-                                      padding: EdgeInsets.symmetric(
-                                          vertical: 12, horizontal: 8),
-                                    ),
-                                    onPressed: _raceList == null ||
-                                            _loadingRaces
-                                        ? null
-                                        : () async {
-                                            final selected =
-                                                await showDialog<DnDRace>(
-                                              context: context,
-                                              builder: (ctx) =>
-                                                  RaceSelectorMenu(
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: _classList == null
+                                    ? null
+                                    : () async {
+                                        final selected = await showDialog<
+                                                DnDClass>(
+                                            context: context,
+                                            builder: (_) => ClassSelectorMenu(
+                                                classes: _classList!,
+                                                onSelected: (c) =>
+                                                    Navigator.of(context)
+                                                        .pop(c)));
+                                        if (selected != null)
+                                          setState(() {
+                                            _selectedClass = selected;
+                                            _selectedClassName = selected.name;
+                                            _recalculateHp(
+                                                preserveCurrent: false);
+                                          });
+                                      },
+                                child: Text(_selectedClassName ??
+                                    (_classList == null
+                                        ? 'Loading...'
+                                        : 'Class')),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: _raceList == null
+                                    ? null
+                                    : () async {
+                                        final selected = await showDialog<
+                                                DnDRace>(
+                                            context: context,
+                                            builder: (_) => RaceSelectorMenu(
                                                 races: _raceList!,
                                                 onSelected: (r) =>
-                                                    Navigator.of(ctx).pop(r),
-                                              ),
-                                            );
-                                            if (selected != null) {
-                                              setState(() {
-                                                _applyRaceBonuses(selected);
-                                                _selectedRace = selected;
-                                                _selectedRaceName =
-                                                    selected.name;
-                                              });
-                                            }
-                                          },
-                                    icon: Icon(Icons.arrow_drop_down),
-                                    label: Text(
-                                      _selectedRaceName ??
-                                          (_loadingRaces
-                                              ? 'Loading...'
-                                              : 'Race'),
-                                      style: TextStyle(
-                                        color: _selectedRaceName != null
-                                            ? Colors.white
-                                            : Colors.white70,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                                    Navigator.of(context)
+                                                        .pop(r)));
+                                        if (selected != null)
+                                          setState(() {
+                                            _selectedRace = selected;
+                                            _selectedRaceName = selected.name;
+                                          });
+                                      },
+                                child: Text(_selectedRaceName ??
+                                    (_raceList == null
+                                        ? 'Loading...'
+                                        : 'Race')),
+                              ),
                             ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(child: Text('Background: __________')),
-                                SizedBox(width: 8),
-                                Expanded(child: Text('Alignment: __________')),
+                          ],
+                        ),
+
+                        SizedBox(height: 12),
+                        // two-row block centered vertically
+                        Container(
+                          height: 72,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Row(children: [
+                                Expanded(
+                                    child: Text('Background',
+                                        style: TextStyle(color: Colors.white))),
                                 SizedBox(width: 8),
                                 Expanded(
-                                  child: Row(
-                                    children: [
-                                      Text('Level:',
-                                          style:
-                                              TextStyle(color: Colors.white)),
-                                      SizedBox(width: 6),
-                                      SizedBox(
+                                    child: Text('Alignment',
+                                        style: TextStyle(color: Colors.white)))
+                              ]),
+                              SizedBox(height: 8),
+                              Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Text('Level:',
+                                        style: TextStyle(color: Colors.white)),
+                                    SizedBox(width: 8),
+                                    SizedBox(
                                         width: 48,
                                         child: TextField(
-                                          controller: _levelController,
-                                          keyboardType: TextInputType.number,
-                                          style: TextStyle(color: Colors.white),
-                                          decoration: InputDecoration(
-                                            hintText: '1',
-                                            hintStyle: TextStyle(
-                                                color: Colors.white70),
-                                            border: InputBorder.none,
-                                            isDense: true,
-                                          ),
-                                          onChanged: (v) {
-                                            setState(() {
-                                              // level updated; recalc HP
-                                            });
-                                            _recalculateHp();
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                            controller: _levelController,
+                                            keyboardType: TextInputType.number,
+                                            decoration: InputDecoration(
+                                                border: InputBorder.none),
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                            onChanged: (_) =>
+                                                _recalculateHp())),
+                                    SizedBox(width: 12),
+                                    Text(
+                                        _selectedClass != null
+                                            ? 'HD: ${TraitFormatter.formatHitDie(_selectedClass!.hitDice)}'
+                                            : 'HD: —',
+                                        style: TextStyle(color: Colors.white70))
+                                  ]),
+                            ],
+                          ),
                         ),
-                      ),
-                      _buildSectionCard(
-                        title: 'Ability Scores',
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildAbility('STR'),
-                                _buildAbility('DEX'),
-                                _buildAbility('CON'),
-                              ],
-                            ),
-                            SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildAbility('INT'),
-                                _buildAbility('WIS'),
-                                _buildAbility('CHA'),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      _buildSectionCard(
-                        title: 'Combat Stats',
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            _buildCombatStat('AC', 'Armor Class'),
-                            _buildCombatStat('Initiative', ''),
-                            _buildCombatStat('Speed', '',
-                                value: _selectedRace != null
-                                    ? TraitFormatter.formatDistance(
-                                        _selectedRace!.traits['speed'])
-                                    : null),
-                            SizedBox(width: 56),
-                            _buildCombatStat('Hit Dice', '',
-                                value: _selectedClass != null
-                                    ? TraitFormatter.formatHitDie(
-                                        _selectedClass!.hitDice)
-                                    : null),
-                          ],
-                        ),
-                      ),
-                      // Add additional sections here as needed
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                  _sectionCard(
+                    title: 'Ability Scores',
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']
+                            .map((k) => Column(children: [
+                                  Text(k,
+                                      style: TextStyle(color: Colors.white)),
+                                  SizedBox(height: 6),
+                                  SizedBox(
+                                      width: 48,
+                                      child: TextField(
+                                          controller: _abilityControllers[k],
+                                          keyboardType: TextInputType.number,
+                                          decoration: InputDecoration(
+                                              border: InputBorder.none),
+                                          style: TextStyle(color: Colors.white),
+                                          onChanged: (_) {
+                                            if (k == 'CON') _recalculateHp();
+                                          }))
+                                ]))
+                            .toList()),
+                  ),
+                  _sectionCard(
+                    title: 'Combat Stats',
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Column(children: [
+                            Text('AC', style: TextStyle(color: Colors.white)),
+                            SizedBox(height: 6),
+                            Text('10', style: TextStyle(color: Colors.white))
+                          ]),
+                          Column(children: [
+                            Text('Initiative',
+                                style: TextStyle(color: Colors.white)),
+                            SizedBox(height: 6),
+                            Text('+0', style: TextStyle(color: Colors.white))
+                          ]),
+                          Column(children: [
+                            Text('Speed',
+                                style: TextStyle(color: Colors.white)),
+                            SizedBox(height: 6),
+                            Text(
+                                _selectedRace != null
+                                    ? (TraitFormatter.formatDistance(
+                                            _selectedRace!.traits['speed']) ??
+                                        '30 ft')
+                                    : '30 ft',
+                                style: TextStyle(color: Colors.white))
+                          ])
+                        ]),
+                  ),
+                  SizedBox(height: 120),
+                ],
               ),
             ),
           ),
-          // Centered circular HP control at top — larger, circular, with a white middle band
+
+          // HP control on top
           Positioned(
             left: 8,
             right: 8,
             top: 8,
-            child: Card(
-              color: Colors.transparent,
-              elevation: 6,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                child: Center(
-                  child: Container(
-                    width: 140,
-                    height: 140,
-                    // outer border for the circle
-                    decoration: BoxDecoration(
+            child: Center(
+              child: GestureDetector(
+                onTap: () => _showHpPopup(context),
+                child: Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black87, width: 3),
-                    ),
-                    child: ClipOval(
-                      child: Stack(
-                        children: [
-                          // top (green) and bottom (red) halves
-                          Column(
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () =>
-                                      _showHpPopup(context, initialHeal: true),
-                                  child: Container(
-                                    color: Colors.green[600],
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () =>
-                                      _showHpPopup(context, initialHeal: false),
-                                  child: Container(
-                                    color: Colors.red[700],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          // HP label in the green half (top) and numbers in the red half (bottom)
-                          // Use Align to position them separately and add drop shadows for contrast
-                          IgnorePointer(
+                      border: Border.all(width: 3, color: Colors.black87)),
+                  child: ClipOval(
+                    child: Stack(
+                      children: [
+                        Column(children: [
+                          Expanded(child: Container(color: Colors.green[600])),
+                          Expanded(child: Container(color: Colors.red[700]))
+                        ]),
+                        IgnorePointer(
                             child: Align(
-                              alignment: Alignment(0, -0.5),
-                              child: Text(
-                                'HP',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black54,
-                                      offset: Offset(0, 1),
-                                      blurRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          IgnorePointer(
+                                alignment: Alignment(0, -0.4),
+                                child: Text('HP',
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black)))),
+                        IgnorePointer(
                             child: Align(
-                              alignment: Alignment(0, 0.5),
-                              child: AnimatedBuilder(
-                                animation: HpStore.instance,
-                                builder: (ctx, __) => Text(
-                                  '${HpStore.instance.current} / ${HpStore.instance.max}',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black87,
-                                        offset: Offset(0, 1.5),
-                                        blurRadius: 3,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                                alignment: Alignment(0, 0.4),
+                                child: AnimatedBuilder(
+                                    animation: HpStore.instance,
+                                    builder: (_, __) => Text(
+                                        '${HpStore.instance.current} / ${HpStore.instance.max}',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18))))),
+                      ],
                     ),
                   ),
                 ),
@@ -736,9 +469,9 @@ class _GrainPainter extends CustomPainter {
     }
     final vignette = Paint()
       ..shader = RadialGradient(
-        colors: [Colors.transparent, Color.fromRGBO(0, 0, 0, 0.25)],
-        stops: [0.6, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+              colors: [Colors.transparent, Color.fromRGBO(0, 0, 0, 0.25)],
+              stops: [0.6, 1.0])
+          .createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), vignette);
   }
 
@@ -746,21 +479,8 @@ class _GrainPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// Utility class for ability score math (D&D 5e)
 class AbilityMath {
   static int parseScore(String text) => int.tryParse(text) ?? 0;
   static int modifierFromScore(int score) => ((score - 10) / 2).floor();
-  static String formatModifier(int mod) => mod >= 0 ? '+$mod' : '$mod';
-  static int clampScore(int score, {int min = 1, int max = 30}) {
-    return score.clamp(min, max);
-  }
-
   static int parseLevel(String text) => int.tryParse(text) ?? 1;
-  static int proficiencyBonusFromLevel(int level) {
-    if (level <= 4) return 2;
-    if (level <= 8) return 3;
-    if (level <= 12) return 4;
-    if (level <= 16) return 5;
-    return 6;
-  }
 }
