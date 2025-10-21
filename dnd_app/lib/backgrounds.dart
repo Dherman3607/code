@@ -5,15 +5,20 @@ class DnDBackground {
   final String id;
   final String name;
   final String description;
+  final Map<String, dynamic> raw;
 
   DnDBackground(
-      {required this.id, required this.name, required this.description});
+      {required this.id,
+      required this.name,
+      required this.description,
+      required this.raw});
 
   factory DnDBackground.fromJson(Map<String, dynamic> json) {
     return DnDBackground(
       id: json['id'] ?? json['name'] ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '',
+      raw: Map<String, dynamic>.from(json),
     );
   }
 }

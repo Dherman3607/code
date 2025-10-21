@@ -180,6 +180,83 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                                   color: Colors.white70)),
                                           SizedBox(height: 8),
                                         ],
+                                        if (b.raw['abilityScoreIncreases'] !=
+                                            null) ...[
+                                          Text('Ability increases:',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white)),
+                                          SizedBox(height: 4),
+                                          Text(
+                                              (b.raw['abilityScoreIncreases']
+                                                      as List)
+                                                  .join(', '),
+                                              style: TextStyle(
+                                                  color: Colors.white70)),
+                                          SizedBox(height: 8),
+                                        ],
+                                        if (b.raw['skillProficiencies'] !=
+                                            null) ...[
+                                          Text('Skill proficiencies:',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white)),
+                                          SizedBox(height: 4),
+                                          Text(
+                                              (b.raw['skillProficiencies']
+                                                      as List)
+                                                  .join(', '),
+                                              style: TextStyle(
+                                                  color: Colors.white70)),
+                                          SizedBox(height: 8),
+                                        ],
+                                        if (b.raw['equipment'] != null) ...[
+                                          Text('Equipment options:',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white)),
+                                          SizedBox(height: 4),
+                                          ...((b.raw['equipment'] as Map)
+                                              .entries
+                                              .map((e) => Text(
+                                                  '${e.key}: ${(e.value as List).join(', ')}',
+                                                  style: TextStyle(
+                                                      color: Colors
+                                                          .white70)))).toList(),
+                                          SizedBox(height: 8),
+                                        ],
+                                        if (b.raw['customFeatures'] !=
+                                            null) ...[
+                                          Text('Features:',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white)),
+                                          SizedBox(height: 6),
+                                          ...((b.raw['customFeatures'] as List)
+                                              .map((cf) {
+                                            final name = cf['name'] ?? '';
+                                            final desc =
+                                                cf['featureDescription'] ??
+                                                    cf['description'] ??
+                                                    '';
+                                            return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(name,
+                                                      style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.white)),
+                                                  SizedBox(height: 4),
+                                                  Text(desc,
+                                                      style: TextStyle(
+                                                          color:
+                                                              Colors.white70)),
+                                                  SizedBox(height: 8),
+                                                ]);
+                                          })).toList(),
+                                        ],
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.end,
