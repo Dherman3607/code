@@ -7,6 +7,7 @@ import 'race_selector_menu.dart';
 import 'races.dart';
 import 'utils/trait_formatter.dart';
 import 'hp_store.dart';
+import 'backgrounds.dart';
 
 // Clean, minimal CharacterSheet implementation.
 class CharacterSheet extends StatefulWidget {
@@ -33,7 +34,9 @@ class _CharacterSheetState extends State<CharacterSheet> {
   DnDRace? _selectedRace;
   String? _selectedClassName;
   String? _selectedRaceName;
-
+  List<DnDBackground>? _backgroundList;
+  DnDBackground? _selectedBackground;
+  String? _selectedBackgroundName;
   @override
   void initState() {
     super.initState();
@@ -56,6 +59,164 @@ class _CharacterSheetState extends State<CharacterSheet> {
           'lib/Data/dnd-export-complete-2025-10-10.json');
       setState(() {});
     } catch (_) {}
+    // also load backgrounds if available
+    try {
+      _backgroundList = await DnDBackgroundLoader.loadBackgrounds(
+          'lib/Data/dnd-export-complete-2025-10-10.json');
+      setState(() {});
+    } catch (_) {}
+  }
+
+  Future<void> _showBackgroundSelector(BuildContext context) async {
+    if (_backgroundList == null) return;
+    int? expandedIndex;
+    final selected = await showDialog<DnDBackground>(
+        context: context,
+        builder: (ctx) {
+          return Dialog(
+            insetPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Container(
+              width: double.maxFinite,
+              height: MediaQuery.of(context).size.height * 0.78,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF3B4852),
+                    Color(0xFF2E3538),
+                    Color(0xFF242627)
+                  ],
+                  stops: [0.0, 0.6, 1.0],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: StatefulBuilder(builder: (ctx, setStateDialog) {
+                return Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child: Text('Select a Background',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white))),
+                          IconButton(
+                              icon: Icon(Icons.close, color: Colors.white),
+                              onPressed: () => Navigator.of(context).pop())
+                        ],
+                      ),
+                    ),
+                    Divider(height: 1, color: Colors.white24),
+                    Expanded(
+                      child: ListView.builder(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        itemCount: _backgroundList!.length,
+                        itemBuilder: (context, index) {
+                          final b = _backgroundList![index];
+                          final expanded = expandedIndex == index;
+                          return Container(
+                            key: ValueKey(b.id),
+                            margin: EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.blueGrey[800]?.withOpacity(0.9),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ListTile(
+                                  title: Text(b.name,
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white)),
+                                  subtitle: b.description.isNotEmpty
+                                      ? Text(b.description,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style:
+                                              TextStyle(color: Colors.white70))
+                                      : null,
+                                  trailing: IconButton(
+                                      icon: Icon(
+                                          expanded
+                                              ? Icons.expand_less
+                                              : Icons.expand_more,
+                                          color: Colors.white),
+                                      onPressed: () => setStateDialog(() {
+                                            expandedIndex =
+                                                expanded ? null : index;
+                                            // scroll into view after expansion
+                                            if (expandedIndex != null) {
+                                              WidgetsBinding.instance
+                                                  .addPostFrameCallback((_) {
+                                                Scrollable.ensureVisible(
+                                                    context,
+                                                    duration: Duration(
+                                                        milliseconds: 360),
+                                                    alignment: 0.02);
+                                              });
+                                            }
+                                          })),
+                                  onTap: () => setStateDialog(() {
+                                    expandedIndex = expanded ? null : index;
+                                  }),
+                                ),
+                                if (expanded)
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        if (b.description.isNotEmpty) ...[
+                                          Text(b.description,
+                                              style: TextStyle(
+                                                  color: Colors.white70)),
+                                          SizedBox(height: 8),
+                                        ],
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            ElevatedButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context).pop(b),
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      Colors.blueGrey[700],
+                                                  foregroundColor:
+                                                      Colors.white),
+                                              child: Text('Select'),
+                                            )
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                  )
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  ],
+                );
+              }),
+            ),
+          );
+        });
+    if (selected != null) {
+      setState(() {
+        _selectedBackground = selected;
+        _selectedBackgroundName = selected.name;
+      });
+    }
   }
 
   void _recalculateHp({bool preserveCurrent = true}) {
@@ -67,6 +228,12 @@ class _CharacterSheetState extends State<CharacterSheet> {
     HpStore.instance
         .setHp(HpStore.instance.current.clamp(0, computedMax), computedMax);
     setState(() {});
+  }
+
+  String _initiativeString() {
+    final dex = AbilityMath.parseScore(_abilityControllers['DEX']!.text);
+    final mod = AbilityMath.modifierFromScore(dex);
+    return (mod >= 0) ? '+$mod' : '$mod';
   }
 
   Future<void> _showHpPopup(BuildContext context,
@@ -352,8 +519,11 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                   padding: EdgeInsets.symmetric(
                                       vertical: 12, horizontal: 8),
                                 ),
-                                onPressed: () {},
-                                child: Text('Background',
+                                onPressed: _backgroundList == null
+                                    ? null
+                                    : () => _showBackgroundSelector(context),
+                                child: Text(
+                                    _selectedBackgroundName ?? 'Background',
                                     style: TextStyle(color: Colors.white)),
                               ),
                             ),
@@ -397,6 +567,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                           style: TextStyle(color: Colors.white),
                                           onChanged: (_) {
                                             if (k == 'CON') _recalculateHp();
+                                            if (k == 'DEX') setState(() {});
                                           }))
                                 ]))
                             .toList()),
@@ -415,7 +586,8 @@ class _CharacterSheetState extends State<CharacterSheet> {
                             Text('Initiative',
                                 style: TextStyle(color: Colors.white)),
                             SizedBox(height: 6),
-                            Text('+0', style: TextStyle(color: Colors.white))
+                            Text(_initiativeString(),
+                                style: TextStyle(color: Colors.white))
                           ]),
                           Column(children: [
                             Text('Speed',
