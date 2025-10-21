@@ -237,10 +237,47 @@ class _CharacterSheetState extends State<CharacterSheet> {
                           ],
                         ),
                         SizedBox(height: 8),
+                        // Level + HD directly under Name (moved here)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text('Level:',
+                                style: TextStyle(color: Colors.white)),
+                            SizedBox(width: 8),
+                            SizedBox(
+                              width: 48,
+                              child: TextField(
+                                controller: _levelController,
+                                keyboardType: TextInputType.number,
+                                decoration:
+                                    InputDecoration(border: InputBorder.none),
+                                style: TextStyle(color: Colors.white),
+                                onChanged: (_) => _recalculateHp(),
+                              ),
+                            ),
+                            SizedBox(width: 16),
+                            Text(
+                              _selectedClass != null
+                                  ? 'HD: ${TraitFormatter.formatHitDie(_selectedClass!.hitDice)}'
+                                  : 'HD: —',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                            Spacer(),
+                          ],
+                        ),
+                        SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
                               child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueGrey[800],
+                                  foregroundColor: Colors.white,
+                                  shape: const StadiumBorder(),
+                                  side: BorderSide(color: Colors.white24),
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 12, horizontal: 8),
+                                ),
                                 onPressed: _classList == null
                                     ? null
                                     : () async {
@@ -269,6 +306,14 @@ class _CharacterSheetState extends State<CharacterSheet> {
                             SizedBox(width: 8),
                             Expanded(
                               child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueGrey[800],
+                                  foregroundColor: Colors.white,
+                                  shape: const StadiumBorder(),
+                                  side: BorderSide(color: Colors.white24),
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 12, horizontal: 8),
+                                ),
                                 onPressed: _raceList == null
                                     ? null
                                     : () async {
@@ -294,50 +339,41 @@ class _CharacterSheetState extends State<CharacterSheet> {
                             ),
                           ],
                         ),
-
-                        SizedBox(height: 12),
-                        // two-row block centered vertically
-                        Container(
-                          height: 72,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(children: [
-                                Expanded(
-                                    child: Text('Background',
-                                        style: TextStyle(color: Colors.white))),
-                                SizedBox(width: 8),
-                                Expanded(
-                                    child: Text('Alignment',
-                                        style: TextStyle(color: Colors.white)))
-                              ]),
-                              SizedBox(height: 8),
-                              Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Text('Level:',
-                                        style: TextStyle(color: Colors.white)),
-                                    SizedBox(width: 8),
-                                    SizedBox(
-                                        width: 48,
-                                        child: TextField(
-                                            controller: _levelController,
-                                            keyboardType: TextInputType.number,
-                                            decoration: InputDecoration(
-                                                border: InputBorder.none),
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                            onChanged: (_) =>
-                                                _recalculateHp())),
-                                    SizedBox(width: 12),
-                                    Text(
-                                        _selectedClass != null
-                                            ? 'HD: ${TraitFormatter.formatHitDie(_selectedClass!.hitDice)}'
-                                            : 'HD: —',
-                                        style: TextStyle(color: Colors.white70))
-                                  ]),
-                            ],
-                          ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueGrey[800],
+                                  foregroundColor: Colors.white,
+                                  shape: const StadiumBorder(),
+                                  side: BorderSide(color: Colors.white24),
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 12, horizontal: 8),
+                                ),
+                                onPressed: () {},
+                                child: Text('Background',
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueGrey[800],
+                                  foregroundColor: Colors.white,
+                                  shape: const StadiumBorder(),
+                                  side: BorderSide(color: Colors.white24),
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 12, horizontal: 8),
+                                ),
+                                onPressed: () {},
+                                child: Text('Alignment',
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
