@@ -24,9 +24,10 @@ class _RaceSelectorMenuState extends State<RaceSelectorMenu> {
     if (_expandedIndex != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final ctx = _cardContext(index);
-        if (ctx != null)
+        if (ctx != null) {
           Scrollable.ensureVisible(ctx,
-              duration: Duration(milliseconds: 360), alignment: 0.02);
+              duration: const Duration(milliseconds: 360), alignment: 0.02);
+        }
       });
     }
   }
@@ -44,7 +45,7 @@ class _RaceSelectorMenuState extends State<RaceSelectorMenu> {
 
     return Container(
       key: key,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.blueGrey[800]?.withAlpha((0.9 * 255).round()),
         borderRadius: BorderRadius.circular(10),
@@ -54,11 +55,11 @@ class _RaceSelectorMenuState extends State<RaceSelectorMenu> {
         children: [
           ListTile(
             title: Text(r.name,
-                style: TextStyle(
+                style: const TextStyle(
                     fontWeight: FontWeight.bold, color: Colors.white)),
             subtitle: r.traits['size'] != null
                 ? Text('Size: ${r.traits['size']}',
-                    style: TextStyle(color: Colors.white70))
+                    style: const TextStyle(color: Colors.white70))
                 : null,
             trailing: IconButton(
               icon: Icon(expanded ? Icons.expand_less : Icons.expand_more,
@@ -69,20 +70,20 @@ class _RaceSelectorMenuState extends State<RaceSelectorMenu> {
           ),
           if (expanded)
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (r.description.isNotEmpty) ...[
                     Text(r.description,
-                        style: TextStyle(color: Colors.white70)),
-                    SizedBox(height: 8),
+                        style: const TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 8),
                   ],
                   if (r.traits.isNotEmpty) ...[
-                    Text('Traits:',
+                    const Text('Traits:',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.white)),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     ...r.traits.entries.expand<Widget>((e) {
                       final label = e.key.toString();
                       final value = e.value;
@@ -104,17 +105,17 @@ class _RaceSelectorMenuState extends State<RaceSelectorMenu> {
                         formatted = value?.toString() ?? '';
                       }
                       return [
-                        Text(label[0].toUpperCase() + label.substring(1) + ':',
-                            style: TextStyle(
+                        Text('${label[0].toUpperCase()}${label.substring(1)}:',
+                            style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white)),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(formatted,
-                            style: TextStyle(color: Colors.white70)),
-                        SizedBox(height: 8),
+                            style: const TextStyle(color: Colors.white70)),
+                        const SizedBox(height: 8),
                       ];
                     }).toList(),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                   ],
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -124,7 +125,7 @@ class _RaceSelectorMenuState extends State<RaceSelectorMenu> {
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blueGrey[700],
                             foregroundColor: Colors.white),
-                        child: Text('Select'),
+                        child: const Text('Select'),
                       )
                     ],
                   )
@@ -139,12 +140,12 @@ class _RaceSelectorMenuState extends State<RaceSelectorMenu> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      insetPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Container(
         width: double.maxFinite,
         height: MediaQuery.of(context).size.height * 0.78,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [Color(0xFF3B4852), Color(0xFF2E3538), Color(0xFF242627)],
@@ -155,31 +156,32 @@ class _RaceSelectorMenuState extends State<RaceSelectorMenu> {
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Expanded(
+                  const Expanded(
                       child: Text('Select a Race',
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.white))),
                   IconButton(
-                      icon: Icon(Icons.close, color: Colors.white),
+                      icon: const Icon(Icons.close, color: Colors.white),
                       onPressed: () => Navigator.of(context).pop())
                 ],
               ),
             ),
-            Divider(height: 1, color: Colors.white24),
+            const Divider(height: 1, color: Colors.white24),
             Expanded(
               child: ListView.builder(
-                padding: EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: widget.races.length,
                 itemBuilder: (context, index) {
                   final r = widget.races[index];
-                  if (_cardKeys.length <= index)
+                  if (_cardKeys.length <= index) {
                     _cardKeys.addAll(List.generate(
                         index - _cardKeys.length + 1, (_) => GlobalKey()));
+                  }
                   return _buildCard(r, index);
                 },
               ),

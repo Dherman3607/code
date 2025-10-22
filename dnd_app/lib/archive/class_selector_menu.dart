@@ -38,7 +38,7 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
       if (cardContext == null) return;
       Scrollable.ensureVisible(
         cardContext,
-        duration: Duration(milliseconds: 360),
+        duration: const Duration(milliseconds: 360),
         curve: Curves.easeInOut,
         alignment: 0.02,
       );
@@ -50,11 +50,11 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
     final cardKey = (index < _cardKeys.length) ? _cardKeys[index] : GlobalKey();
     return Container(
       key: cardKey,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.blueGrey[800]?.withAlpha((0.9 * 255).round()),
         borderRadius: BorderRadius.circular(10),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
         ],
       ),
@@ -63,12 +63,12 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
         children: [
           ListTile(
             title: Text(c.name,
-                style: TextStyle(
+                style: const TextStyle(
                     fontWeight: FontWeight.bold, color: Colors.white)),
             subtitle: c.primaryAbility.isNotEmpty
                 ? Text(
                     'Primary: ${c.primaryAbility.map((s) => s[0].toUpperCase() + s.substring(1)).join(', ')}',
-                    style: TextStyle(color: Colors.white70))
+                    style: const TextStyle(color: Colors.white70))
                 : null,
             trailing: IconButton(
               key: ValueKey('expand_btn_${c.id}'),
@@ -80,48 +80,48 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
           ),
           if (expanded)
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (c.description.isNotEmpty) ...[
                     Text(c.description,
-                        style: TextStyle(color: Colors.white70)),
-                    SizedBox(height: 8),
+                        style: const TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 8),
                   ],
                   if (c.skillProficiencies.isNotEmpty) ...[
-                    Text('Skill Proficiencies:',
+                    const Text('Skill Proficiencies:',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.white)),
                     Text(c.skillProficiencies.join(', '),
-                        style: TextStyle(color: Colors.white70)),
-                    SizedBox(height: 8),
+                        style: const TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 8),
                   ],
                   if (c.weaponProficiencies.isNotEmpty) ...[
-                    Text('Weapons:',
+                    const Text('Weapons:',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.white)),
                     Text(c.weaponProficiencies,
-                        style: TextStyle(color: Colors.white70)),
-                    SizedBox(height: 8),
+                        style: const TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 8),
                   ],
                   if (c.armorTraining.isNotEmpty) ...[
-                    Text('Armor:',
+                    const Text('Armor:',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.white)),
                     Text(c.armorTraining,
-                        style: TextStyle(color: Colors.white70)),
-                    SizedBox(height: 8),
+                        style: const TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 8),
                   ],
                   if (c.startingEquipment.isNotEmpty) ...[
-                    Text('Starting Equipment:',
+                    const Text('Starting Equipment:',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: Colors.white)),
                     Text(
                         c.startingEquipment.replaceAllMapped(
                             RegExp(r"\(A\)|\(B\)|\(C\)"), (m) => "\n${m[0]}"),
-                        style: TextStyle(color: Colors.white70)),
-                    SizedBox(height: 12),
+                        style: const TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 12),
                   ],
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -134,7 +134,7 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
                         onPressed: () {
                           widget.onSelected(c);
                         },
-                        child: Text('Select'),
+                        child: const Text('Select'),
                       ),
                     ],
                   )
@@ -149,12 +149,12 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      insetPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Container(
         width: double.maxFinite,
         height: MediaQuery.of(context).size.height * 0.78,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [Color(0xFF3B4852), Color(0xFF2E3538), Color(0xFF242627)],
@@ -164,23 +164,23 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Expanded(
+                  const Expanded(
                       child: Text('Select a Class',
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.white))),
                   IconButton(
-                      key: ValueKey('close_selector_btn'),
-                      icon: Icon(Icons.close, color: Colors.white),
+                      key: const ValueKey('close_selector_btn'),
+                      icon: const Icon(Icons.close, color: Colors.white),
                       onPressed: () => Navigator.of(context).pop())
                 ],
               ),
             ),
-            Divider(height: 1, color: Colors.white24),
+            const Divider(height: 1, color: Colors.white24),
             Expanded(
               child: Scrollbar(
                 controller: _scrollController,
@@ -188,13 +188,14 @@ class _ClassSelectorMenuState extends State<ClassSelectorMenu> {
                 child: ListView.builder(
                   key: _listKey,
                   controller: _scrollController,
-                  padding: EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: widget.classes.length,
                   itemBuilder: (context, index) {
                     final cls = widget.classes[index];
-                    if (_cardKeys.length <= index)
+                    if (_cardKeys.length <= index) {
                       _cardKeys.addAll(List.generate(
                           index - _cardKeys.length + 1, (_) => GlobalKey()));
+                    }
                     return _buildCard(cls, index);
                   },
                 ),

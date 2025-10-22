@@ -11,6 +11,8 @@ import 'unified_selector_dialog.dart';
 
 // Clean, minimal CharacterSheet implementation.
 class CharacterSheet extends StatefulWidget {
+  const CharacterSheet({Key? key}) : super(key: key);
+
   @override
   _CharacterSheetState createState() => _CharacterSheetState();
 }
@@ -54,7 +56,9 @@ class _CharacterSheetState extends State<CharacterSheet> {
       _classList = await DnDClassLoader.loadClasses(
           'lib/Data/dnd-export-complete-2025-10-10.json');
       setState(() {});
-    } catch (_) {}
+    } catch (_) {
+      // ignore errors while loading classes
+    }
   }
 
   Future<void> _loadRaces() async {
@@ -62,13 +66,17 @@ class _CharacterSheetState extends State<CharacterSheet> {
       _raceList = await DnDRaceLoader.loadRaces(
           'lib/Data/dnd-export-complete-2025-10-10.json');
       setState(() {});
-    } catch (_) {}
+    } catch (_) {
+      // ignore races load errors
+    }
     // also load backgrounds if available
     try {
       _backgroundList = await DnDBackgroundLoader.loadBackgrounds(
           'lib/Data/dnd-export-complete-2025-10-10.json');
       setState(() {});
-    } catch (_) {}
+    } catch (_) {
+      // ignore background load errors
+    }
   }
 
   Future<void> _showBackgroundSelector(BuildContext context) async {
@@ -77,20 +85,21 @@ class _CharacterSheetState extends State<CharacterSheet> {
       context: context,
       title: 'Select a Background',
       items: _backgroundList!,
-      titleBuilder: (b) => Text(b.name, style: TextStyle(color: Colors.white)),
+      titleBuilder: (b) =>
+          Text(b.name, style: const TextStyle(color: Colors.white)),
       detailsBuilder: (b) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (b.description.isNotEmpty)
-            Text(b.description, style: TextStyle(color: Colors.white70)),
-          SizedBox(height: 8),
+            Text(b.description, style: const TextStyle(color: Colors.white70)),
+          const SizedBox(height: 8),
           if (b.raw['skillProficiencies'] != null)
             Text('Skills: ${(b.raw['skillProficiencies'] as List).join(', ')}',
-                style: TextStyle(color: Colors.white70)),
+                style: const TextStyle(color: Colors.white70)),
           if (b.raw['equipment'] != null)
             Text(
                 'Equipment: ${(b.raw['equipment'] is List) ? (b.raw['equipment'] as List).join(', ') : b.raw['equipment'].toString()}',
-                style: TextStyle(color: Colors.white70)),
+                style: const TextStyle(color: Colors.white70)),
         ],
       ),
     );
@@ -141,25 +150,26 @@ class _CharacterSheetState extends State<CharacterSheet> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Edit HP'),
+        title: const Text('Edit HP'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: curController,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: 'Current'),
+              decoration: const InputDecoration(labelText: 'Current'),
             ),
             TextField(
               controller: maxController,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: 'Max'),
+              decoration: const InputDecoration(labelText: 'Max'),
             ),
           ],
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(ctx).pop(), child: Text('Cancel')),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel')),
           TextButton(
               onPressed: () {
                 final newCur = int.tryParse(curController.text) ?? cur;
@@ -167,7 +177,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
                 HpStore.instance.setHp(newCur, newMax);
                 Navigator.of(ctx).pop();
               },
-              child: Text('Save'))
+              child: const Text('Save'))
         ],
       ),
     );
@@ -179,24 +189,26 @@ class _CharacterSheetState extends State<CharacterSheet> {
   void dispose() {
     _nameController.dispose();
     _levelController.dispose();
-    for (var c in _abilityControllers.values) c.dispose();
+    for (var c in _abilityControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
   Widget _sectionCard({required String title, required Widget child}) => Card(
         color: Colors.blueGrey[800]?.withAlpha((0.9 * 255).round()),
-        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         child: Padding(
-            padding: EdgeInsets.all(12),
+            padding: const EdgeInsets.all(12),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(title,
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white)),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               child
             ])),
       );
@@ -205,14 +217,14 @@ class _CharacterSheetState extends State<CharacterSheet> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: Text('D&D Character Sheet'),
+          title: const Text('D&D Character Sheet'),
           backgroundColor: Colors.blueGrey[900]),
       body: Stack(
         children: [
           // background
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                   gradient: LinearGradient(
                       colors: [Color(0xFF3B4852), Color(0xFF2E3538)])),
               child: CustomPaint(painter: _GrainPainter()),
@@ -227,7 +239,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
               children: [
                 // original character sheet content wrapped
                 SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(8, 160, 8, 24),
+                  padding: const EdgeInsets.fromLTRB(8, 160, 8, 24),
                   child: Column(
                     children: [
                       _sectionCard(
@@ -240,16 +252,16 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                 Expanded(
                                   child: Row(
                                     children: [
-                                      Text('Name:',
+                                      const Text('Name:',
                                           style:
                                               TextStyle(color: Colors.white)),
-                                      SizedBox(width: 8),
+                                      const SizedBox(width: 8),
                                       Expanded(
                                         child: TextField(
                                             controller: _nameController,
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                            decoration: InputDecoration(
+                                            style: const TextStyle(
+                                                color: Colors.white),
+                                            decoration: const InputDecoration(
                                                 border: InputBorder.none,
                                                 hintText: 'Name')),
                                       ),
@@ -258,36 +270,36 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             // Level + HD directly under Name (moved here)
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Text('Level:',
+                                const Text('Level:',
                                     style: TextStyle(color: Colors.white)),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 SizedBox(
                                   width: 48,
                                   child: TextField(
                                     controller: _levelController,
                                     keyboardType: TextInputType.number,
-                                    decoration: InputDecoration(
+                                    decoration: const InputDecoration(
                                         border: InputBorder.none),
-                                    style: TextStyle(color: Colors.white),
+                                    style: const TextStyle(color: Colors.white),
                                     onChanged: (_) => _recalculateHp(),
                                   ),
                                 ),
-                                SizedBox(width: 16),
+                                const SizedBox(width: 16),
                                 Text(
                                   _selectedClass != null
                                       ? 'HD: ${TraitFormatter.formatHitDie(_selectedClass!.hitDice)}'
                                       : 'HD: —',
-                                  style: TextStyle(color: Colors.white70),
+                                  style: const TextStyle(color: Colors.white70),
                                 ),
-                                Spacer(),
+                                const Spacer(),
                               ],
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             Row(
                               children: [
                                 Expanded(
@@ -296,8 +308,9 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                       backgroundColor: Colors.blueGrey[800],
                                       foregroundColor: Colors.white,
                                       shape: const StadiumBorder(),
-                                      side: BorderSide(color: Colors.white24),
-                                      padding: EdgeInsets.symmetric(
+                                      side: const BorderSide(
+                                          color: Colors.white24),
+                                      padding: const EdgeInsets.symmetric(
                                           vertical: 12, horizontal: 8),
                                     ),
                                     onPressed: _classList == null
@@ -310,7 +323,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                               title: 'Select a Class',
                                               items: _classList!,
                                               titleBuilder: (c) => Text(c.name,
-                                                  style: TextStyle(
+                                                  style: const TextStyle(
                                                       color: Colors.white)),
                                               detailsBuilder: (c) => Column(
                                                 crossAxisAlignment:
@@ -318,36 +331,36 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                                 children: [
                                                   if (c.description.isNotEmpty)
                                                     Text(c.description,
-                                                        style: TextStyle(
+                                                        style: const TextStyle(
                                                             color: Colors
                                                                 .white70)),
-                                                  SizedBox(height: 8),
+                                                  const SizedBox(height: 8),
                                                   if (c.primaryAbility
                                                       .isNotEmpty)
                                                     Text(
                                                         'Primary: ${c.primaryAbility.join(', ')}',
-                                                        style: TextStyle(
+                                                        style: const TextStyle(
                                                             color: Colors
                                                                 .white70)),
                                                   if (c.savingThrowProficiencies
                                                       .isNotEmpty)
                                                     Text(
                                                         'Saves: ${c.savingThrowProficiencies.join(', ')}',
-                                                        style: TextStyle(
+                                                        style: const TextStyle(
                                                             color: Colors
                                                                 .white70)),
                                                   if (c.skillProficiencies
                                                       .isNotEmpty)
                                                     Text(
                                                         'Skills: ${c.skillProficiencies.join(', ')}',
-                                                        style: TextStyle(
+                                                        style: const TextStyle(
                                                             color: Colors
                                                                 .white70)),
                                                   if (c.startingEquipment
                                                       .isNotEmpty)
                                                     Text(
                                                         'Starting: ${c.startingEquipment}',
-                                                        style: TextStyle(
+                                                        style: const TextStyle(
                                                             color: Colors
                                                                 .white70)),
                                                 ],
@@ -370,15 +383,16 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                             : 'Class')),
                                   ),
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: ElevatedButton(
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.blueGrey[800],
                                       foregroundColor: Colors.white,
                                       shape: const StadiumBorder(),
-                                      side: BorderSide(color: Colors.white24),
-                                      padding: EdgeInsets.symmetric(
+                                      side: const BorderSide(
+                                          color: Colors.white24),
+                                      padding: const EdgeInsets.symmetric(
                                           vertical: 12, horizontal: 8),
                                     ),
                                     onPressed: _raceList == null
@@ -391,7 +405,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                               title: 'Select a Race',
                                               items: _raceList!,
                                               titleBuilder: (r) => Text(r.name,
-                                                  style: TextStyle(
+                                                  style: const TextStyle(
                                                       color: Colors.white)),
                                               detailsBuilder: (r) => Column(
                                                 crossAxisAlignment:
@@ -399,14 +413,14 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                                 children: [
                                                   if (r.description.isNotEmpty)
                                                     Text(r.description,
-                                                        style: TextStyle(
+                                                        style: const TextStyle(
                                                             color: Colors
                                                                 .white70)),
-                                                  SizedBox(height: 8),
+                                                  const SizedBox(height: 8),
                                                   if (r.traits.isNotEmpty)
                                                     Text(
                                                         'Traits: ${r.traits.keys.join(', ')}',
-                                                        style: TextStyle(
+                                                        style: const TextStyle(
                                                             color: Colors
                                                                 .white70)),
                                                 ],
@@ -429,7 +443,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             Row(
                               children: [
                                 Expanded(
@@ -438,8 +452,9 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                       backgroundColor: Colors.blueGrey[800],
                                       foregroundColor: Colors.white,
                                       shape: const StadiumBorder(),
-                                      side: BorderSide(color: Colors.white24),
-                                      padding: EdgeInsets.symmetric(
+                                      side: const BorderSide(
+                                          color: Colors.white24),
+                                      padding: const EdgeInsets.symmetric(
                                           vertical: 12, horizontal: 8),
                                     ),
                                     onPressed: _backgroundList == null
@@ -449,22 +464,24 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                     child: Text(
                                         _selectedBackground?.name ??
                                             'Background',
-                                        style: TextStyle(color: Colors.white)),
+                                        style: const TextStyle(
+                                            color: Colors.white)),
                                   ),
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: ElevatedButton(
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.blueGrey[800],
                                       foregroundColor: Colors.white,
                                       shape: const StadiumBorder(),
-                                      side: BorderSide(color: Colors.white24),
-                                      padding: EdgeInsets.symmetric(
+                                      side: const BorderSide(
+                                          color: Colors.white24),
+                                      padding: const EdgeInsets.symmetric(
                                           vertical: 12, horizontal: 8),
                                     ),
                                     onPressed: () {},
-                                    child: Text('Alignment',
+                                    child: const Text('Alignment',
                                         style: TextStyle(color: Colors.white)),
                                   ),
                                 ),
@@ -481,16 +498,18 @@ class _CharacterSheetState extends State<CharacterSheet> {
                               .map((k) {
                             return Column(
                               children: [
-                                Text(k, style: TextStyle(color: Colors.white)),
-                                SizedBox(height: 6),
+                                Text(k,
+                                    style:
+                                        const TextStyle(color: Colors.white)),
+                                const SizedBox(height: 6),
                                 SizedBox(
                                   width: 48,
                                   child: TextField(
                                     controller: _abilityControllers[k],
                                     keyboardType: TextInputType.number,
-                                    decoration: InputDecoration(
+                                    decoration: const InputDecoration(
                                         border: InputBorder.none),
-                                    style: TextStyle(color: Colors.white),
+                                    style: const TextStyle(color: Colors.white),
                                     onChanged: (_) {
                                       if (k == 'CON') _recalculateHp();
                                       if (k == 'DEX') setState(() {});
@@ -507,7 +526,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
                         child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              Column(children: [
+                              const Column(children: [
                                 Text('AC',
                                     style: TextStyle(color: Colors.white)),
                                 SizedBox(height: 6),
@@ -515,16 +534,16 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                     style: TextStyle(color: Colors.white))
                               ]),
                               Column(children: [
-                                Text('Initiative',
+                                const Text('Initiative',
                                     style: TextStyle(color: Colors.white)),
-                                SizedBox(height: 6),
+                                const SizedBox(height: 6),
                                 Text(_initiativeString(),
-                                    style: TextStyle(color: Colors.white))
+                                    style: const TextStyle(color: Colors.white))
                               ]),
                               Column(children: [
-                                Text('Speed',
+                                const Text('Speed',
                                     style: TextStyle(color: Colors.white)),
-                                SizedBox(height: 6),
+                                const SizedBox(height: 6),
                                 Text(
                                     _selectedRace != null
                                         ? (TraitFormatter.formatDistance(
@@ -532,11 +551,11 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                                     .traits['speed']) ??
                                             '30 ft')
                                         : '30 ft',
-                                    style: TextStyle(color: Colors.white))
+                                    style: const TextStyle(color: Colors.white))
                               ])
                             ]),
                       ),
-                      SizedBox(height: 120),
+                      const SizedBox(height: 120),
                     ],
                   ),
                 ),
@@ -557,7 +576,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(2, (i) {
                   return Container(
-                    margin: EdgeInsets.symmetric(horizontal: 4),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: _pageIndex == i ? 12 : 8,
                     height: _pageIndex == i ? 12 : 8,
                     decoration: BoxDecoration(
@@ -590,7 +609,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
                           Expanded(child: Container(color: Colors.green[600])),
                           Expanded(child: Container(color: Colors.red[700]))
                         ]),
-                        IgnorePointer(
+                        const IgnorePointer(
                             child: Align(
                                 alignment: Alignment(0, -0.4),
                                 child: Text('HP',
@@ -600,12 +619,12 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                         color: Colors.black)))),
                         IgnorePointer(
                             child: Align(
-                                alignment: Alignment(0, 0.4),
+                                alignment: const Alignment(0, 0.4),
                                 child: AnimatedBuilder(
                                     animation: HpStore.instance,
                                     builder: (_, __) => Text(
                                         '${HpStore.instance.current} / ${HpStore.instance.max}',
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 18))))),
@@ -626,7 +645,7 @@ class _GrainPainter extends CustomPainter {
   final math.Random _rnd = math.Random(42);
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Color.fromRGBO(255, 255, 255, 0.02);
+    final paint = Paint()..color = const Color.fromRGBO(255, 255, 255, 0.02);
     final int count =
         (size.width * size.height / 4000).clamp(400, 2000).toInt();
     for (int i = 0; i < count; i++) {
@@ -636,7 +655,7 @@ class _GrainPainter extends CustomPainter {
       canvas.drawRect(Rect.fromLTWH(x, y, s, s), paint);
     }
     final vignette = Paint()
-      ..shader = RadialGradient(
+      ..shader = const RadialGradient(
               colors: [Colors.transparent, Color.fromRGBO(0, 0, 0, 0.25)],
               stops: [0.6, 1.0])
           .createShader(Rect.fromLTWH(0, 0, size.width, size.height));

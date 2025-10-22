@@ -50,7 +50,9 @@ class DnDBackgroundLoader {
     final List<DnDBackground> found = [];
     void search(dynamic node) {
       if (node is List) {
-        for (var item in node) search(item);
+        for (var item in node) {
+          search(item);
+        }
       } else if (node is Map<String, dynamic>) {
         if (node['type'] == 'background') {
           if (node['items'] is List) {

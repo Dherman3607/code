@@ -14,12 +14,12 @@ Future<T?> showUnifiedSelector<T>({
     context: context,
     builder: (ctx) {
       return Dialog(
-        insetPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         child: Container(
           width: double.maxFinite,
           height: MediaQuery.of(context).size.height * 0.78,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [Color(0xFF3B4852), Color(0xFF2E3538), Color(0xFF242627)],
@@ -66,38 +66,38 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
     return Column(
       children: [
         Padding(
-          padding: EdgeInsets.all(12),
+          padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               Expanded(
                 child: Text(widget.title,
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.white)),
               ),
               IconButton(
-                icon: Icon(Icons.close, color: Colors.white),
+                icon: const Icon(Icons.close, color: Colors.white),
                 onPressed: () => Navigator.of(context).pop(),
               )
             ],
           ),
         ),
-        Divider(height: 1, color: Colors.white24),
+        const Divider(height: 1, color: Colors.white24),
         Expanded(
           child: widget.items.isEmpty
-              ? Center(
+              ? const Center(
                   child:
                       Text('No items', style: TextStyle(color: Colors.white70)))
               : ListView.builder(
-                  padding: EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: widget.items.length,
                   itemBuilder: (ctx, index) {
                     final item = widget.items[index];
                     final expanded = _expandedIndex == index;
                     return Container(
                       key: ValueKey(index),
-                      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                       decoration: BoxDecoration(
                         color: Colors.blueGrey[800]
                             ?.withAlpha((0.9 * 255).round()),
@@ -125,7 +125,7 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
                           ),
                           if (expanded && widget.detailsBuilder != null)
                             Padding(
-                              padding: EdgeInsets.symmetric(
+                              padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 8),
                               child: widget.detailsBuilder!(item),
                             ),
@@ -139,9 +139,9 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
                                   style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.blueGrey[700],
                                       foregroundColor: Colors.white),
-                                  child: Text('Select'),
+                                  child: const Text('Select'),
                                 ),
-                                SizedBox(width: 12),
+                                const SizedBox(width: 12),
                               ],
                             ),
                         ],

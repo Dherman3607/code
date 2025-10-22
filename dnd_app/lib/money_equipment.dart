@@ -8,10 +8,10 @@ class MoneyEquipmentPage extends StatelessWidget {
 
   MoneyEquipmentPage({Key? key}) : super(key: key);
 
-  Color _platinumColor() => Color(0xFFE6E6EA);
-  Color _goldColor() => Color(0xFFFFD54F);
-  Color _silverColor() => Color(0xFFC0C0C0);
-  Color _copperColor() => Color(0xFFB87333);
+  Color _platinumColor() => const Color(0xFFE6E6EA);
+  Color _goldColor() => const Color(0xFFFFD54F);
+  Color _silverColor() => const Color(0xFFC0C0C0);
+  Color _copperColor() => const Color(0xFFB87333);
 
   Widget _coinBox(String label, TextEditingController controller, Color bg) {
     return Expanded(
@@ -20,17 +20,17 @@ class MoneyEquipmentPage extends StatelessWidget {
           color: bg,
         ),
         // slightly smaller padding so content fits comfortably
-        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(label,
-                style: TextStyle(
+                style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                     fontSize: 14)),
-            SizedBox(height: 6),
+            const SizedBox(height: 6),
             SizedBox(
               width: 72,
               height: 32, // constrain height so TextField won't overflow
@@ -38,13 +38,13 @@ class MoneyEquipmentPage extends StatelessWidget {
                 controller: controller,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   isDense: true,
                   contentPadding:
                       EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                 ),
-                style: TextStyle(color: Colors.black87, fontSize: 14),
+                style: const TextStyle(color: Colors.black87, fontSize: 14),
               ),
             )
           ],
@@ -56,25 +56,25 @@ class MoneyEquipmentPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(8, 160, 8, 24),
+      padding: const EdgeInsets.fromLTRB(8, 160, 8, 24),
       child: Column(
         children: [
           Card(
             color: Colors.blueGrey[800]?.withAlpha((0.9 * 255).round()),
-            margin: EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: Padding(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Money',
+                  const Text('Money',
                       style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.white)),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Container(
                     height: 96,
                     decoration: BoxDecoration(
@@ -97,10 +97,10 @@ class MoneyEquipmentPage extends StatelessWidget {
           // Equipment section
           Card(
             color: Colors.blueGrey[800]?.withAlpha((0.9 * 255).round()),
-            margin: EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            child: Padding(
+            child: const Padding(
               padding: EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +124,7 @@ class MoneyEquipmentPage extends StatelessWidget {
             ),
           ),
 
-          SizedBox(height: 120),
+          const SizedBox(height: 120),
         ],
       ),
     );

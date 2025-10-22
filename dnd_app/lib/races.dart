@@ -41,7 +41,9 @@ class DnDRaceLoader {
     final List<DnDRace> found = [];
     void search(dynamic node) {
       if (node is List) {
-        for (var item in node) search(item);
+        for (var item in node) {
+          search(item);
+        }
       } else if (node is Map<String, dynamic>) {
         if (node['type'] == 'race') {
           if (node['items'] is List) {

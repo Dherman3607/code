@@ -23,7 +23,7 @@ void main() {
   });
 
   test('extractDistancesFromText', () {
-    final text = 'You can see within 60 feet and another effect at 10 ft.';
+    const text = 'You can see within 60 feet and another effect at 10 ft.';
     final found = TraitFormatter.extractDistancesFromText(text);
     expect(found, [60, 10]);
   });
