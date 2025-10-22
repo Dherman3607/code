@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-import 'class_selector_menu.dart';
 import 'classes.dart';
-import 'race_selector_menu.dart';
 import 'races.dart';
 import 'utils/trait_formatter.dart';
 import 'hp_store.dart';
 import 'backgrounds.dart';
 import 'money_equipment.dart';
+import 'unified_selector_dialog.dart';
 
 // Clean, minimal CharacterSheet implementation.
 class CharacterSheet extends StatefulWidget {
@@ -74,225 +73,28 @@ class _CharacterSheetState extends State<CharacterSheet> {
 
   Future<void> _showBackgroundSelector(BuildContext context) async {
     if (_backgroundList == null) return;
-    int? expandedIndex;
-    final selected = await showDialog<DnDBackground>(
-        context: context,
-        builder: (ctx) {
-          return Dialog(
-            insetPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-            child: Container(
-              width: double.maxFinite,
-              height: MediaQuery.of(context).size.height * 0.78,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF3B4852),
-                    Color(0xFF2E3538),
-                    Color(0xFF242627)
-                  ],
-                  stops: [0.0, 0.6, 1.0],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: StatefulBuilder(builder: (ctx, setStateDialog) {
-                return Column(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                              child: Text('Select a Background',
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white))),
-                          IconButton(
-                              icon: Icon(Icons.close, color: Colors.white),
-                              onPressed: () => Navigator.of(context).pop())
-                        ],
-                      ),
-                    ),
-                    Divider(height: 1, color: Colors.white24),
-                    Expanded(
-                      child: ListView.builder(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        itemCount: _backgroundList!.length,
-                        itemBuilder: (context, index) {
-                          final b = _backgroundList![index];
-                          final expanded = expandedIndex == index;
-                          return Container(
-                            key: ValueKey(b.id),
-                            margin: EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.blueGrey[800]?.withOpacity(0.9),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ListTile(
-                                  title: Text(b.name,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white)),
-                                  subtitle: b.description.isNotEmpty
-                                      ? Text(b.description,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style:
-                                              TextStyle(color: Colors.white70))
-                                      : null,
-                                  trailing: IconButton(
-                                      icon: Icon(
-                                          expanded
-                                              ? Icons.expand_less
-                                              : Icons.expand_more,
-                                          color: Colors.white),
-                                      onPressed: () => setStateDialog(() {
-                                            expandedIndex =
-                                                expanded ? null : index;
-                                            // scroll into view after expansion
-                                            if (expandedIndex != null) {
-                                              WidgetsBinding.instance
-                                                  .addPostFrameCallback((_) {
-                                                Scrollable.ensureVisible(
-                                                    context,
-                                                    duration: Duration(
-                                                        milliseconds: 360),
-                                                    alignment: 0.02);
-                                              });
-                                            }
-                                          })),
-                                  onTap: () => setStateDialog(() {
-                                    expandedIndex = expanded ? null : index;
-                                  }),
-                                ),
-                                if (expanded)
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 8),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (b.description.isNotEmpty) ...[
-                                          Text(b.description,
-                                              style: TextStyle(
-                                                  color: Colors.white70)),
-                                          SizedBox(height: 8),
-                                        ],
-                                        if (b.raw['abilityScoreIncreases'] !=
-                                            null) ...[
-                                          Text('Ability increases:',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white)),
-                                          SizedBox(height: 4),
-                                          Text(
-                                              (b.raw['abilityScoreIncreases']
-                                                      as List)
-                                                  .join(', '),
-                                              style: TextStyle(
-                                                  color: Colors.white70)),
-                                          SizedBox(height: 8),
-                                        ],
-                                        if (b.raw['skillProficiencies'] !=
-                                            null) ...[
-                                          Text('Skill proficiencies:',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white)),
-                                          SizedBox(height: 4),
-                                          Text(
-                                              (b.raw['skillProficiencies']
-                                                      as List)
-                                                  .join(', '),
-                                              style: TextStyle(
-                                                  color: Colors.white70)),
-                                          SizedBox(height: 8),
-                                        ],
-                                        if (b.raw['equipment'] != null) ...[
-                                          Text('Equipment options:',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white)),
-                                          SizedBox(height: 4),
-                                          ...((b.raw['equipment'] as Map)
-                                              .entries
-                                              .map((e) => Text(
-                                                  '${e.key}: ${(e.value as List).join(', ')}',
-                                                  style: TextStyle(
-                                                      color: Colors
-                                                          .white70)))).toList(),
-                                          SizedBox(height: 8),
-                                        ],
-                                        if (b.raw['customFeatures'] !=
-                                            null) ...[
-                                          Text('Features:',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white)),
-                                          SizedBox(height: 6),
-                                          ...((b.raw['customFeatures'] as List)
-                                              .map((cf) {
-                                            final name = cf['name'] ?? '';
-                                            final desc =
-                                                cf['featureDescription'] ??
-                                                    cf['description'] ??
-                                                    '';
-                                            return Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(name,
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: Colors.white)),
-                                                  SizedBox(height: 4),
-                                                  Text(desc,
-                                                      style: TextStyle(
-                                                          color:
-                                                              Colors.white70)),
-                                                  SizedBox(height: 8),
-                                                ]);
-                                          })).toList(),
-                                        ],
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.end,
-                                          children: [
-                                            ElevatedButton(
-                                              onPressed: () =>
-                                                  Navigator.of(context).pop(b),
-                                              style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      Colors.blueGrey[700],
-                                                  foregroundColor:
-                                                      Colors.white),
-                                              child: Text('Select'),
-                                            )
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                  )
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    )
-                  ],
-                );
-              }),
-            ),
-          );
-        });
+    final selected = await showUnifiedSelector<DnDBackground>(
+      context: context,
+      title: 'Select a Background',
+      items: _backgroundList!,
+      titleBuilder: (b) => Text(b.name, style: TextStyle(color: Colors.white)),
+      detailsBuilder: (b) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (b.description.isNotEmpty)
+            Text(b.description, style: TextStyle(color: Colors.white70)),
+          SizedBox(height: 8),
+          if (b.raw['skillProficiencies'] != null)
+            Text('Skills: ${(b.raw['skillProficiencies'] as List).join(', ')}',
+                style: TextStyle(color: Colors.white70)),
+          if (b.raw['equipment'] != null)
+            Text(
+                'Equipment: ${(b.raw['equipment'] is List) ? (b.raw['equipment'] as List).join(', ') : b.raw['equipment'].toString()}',
+                style: TextStyle(color: Colors.white70)),
+        ],
+      ),
+    );
+
     if (selected != null) {
       setState(() {
         _selectedBackground = selected;
@@ -304,108 +106,73 @@ class _CharacterSheetState extends State<CharacterSheet> {
     final level = AbilityMath.parseLevel(_levelController.text);
     final con = AbilityMath.parseScore(_abilityControllers['CON']!.text);
     final conMod = AbilityMath.modifierFromScore(con);
-    final hd = _selectedClass?.hitDice ?? 8;
-    final computedMax = hd * level + conMod * level;
-    HpStore.instance
-        .setHp(HpStore.instance.current.clamp(0, computedMax), computedMax);
+    final baseDie = _selectedClass?.hitDice ?? 0;
+
+    // Simple HP progression: level 1 = baseDie + conMod, subsequent levels add average hit die + conMod
+    final int perLevelGain = ((baseDie / 2).floor() + 1) + conMod;
+    int newMax;
+    if (baseDie > 0) {
+      newMax = baseDie + conMod + (level - 1) * perLevelGain;
+      if (newMax < 1) newMax = 1;
+    } else {
+      newMax = (1 + conMod) * level;
+      if (newMax < 1) newMax = 1;
+    }
+
+    int current = HpStore.instance.current;
+    if (!preserveCurrent) current = newMax;
+    current = current.clamp(0, newMax);
+    HpStore.instance.setHp(current, newMax);
     setState(() {});
   }
 
   String _initiativeString() {
     final dex = AbilityMath.parseScore(_abilityControllers['DEX']!.text);
     final mod = AbilityMath.modifierFromScore(dex);
-    return (mod >= 0) ? '+$mod' : '$mod';
+    return mod >= 0 ? '+$mod' : '$mod';
   }
 
-  Future<void> _showHpPopup(BuildContext context,
-      {bool initialHeal = true}) async {
-    bool isHeal = initialHeal;
-    String amount = '1';
-    await showDialog<void>(
+  Future<void> _showHpPopup(BuildContext context) async {
+    final cur = HpStore.instance.current;
+    final max = HpStore.instance.max;
+    final curController = TextEditingController(text: cur.toString());
+    final maxController = TextEditingController(text: max.toString());
+
+    await showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(builder: (ctx, setState) {
-        return AlertDialog(
-          title: Text(isHeal ? 'Heal' : 'Damage'),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              ChoiceChip(
-                  label: Text('Heal'),
-                  selected: isHeal,
-                  onSelected: (_) => setState(() => isHeal = true)),
-              SizedBox(width: 8),
-              ChoiceChip(
-                  label: Text('Damage'),
-                  selected: !isHeal,
-                  onSelected: (_) => setState(() => isHeal = false)),
-            ]),
-            SizedBox(height: 12),
+      builder: (ctx) => AlertDialog(
+        title: Text('Edit HP'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             TextField(
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Amount'),
-                onChanged: (v) => amount = v),
-          ]),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: Text('Cancel')),
-            TextButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  _showHpLog(context);
-                },
-                child: Text('Log')),
-            ElevatedButton(
-                onPressed: () {
-                  final n = int.tryParse(amount) ?? 1;
-                  HpStore.instance.applyChange(isHeal ? n : -n,
-                      type: isHeal ? 'heal' : 'damage');
-                  Navigator.of(ctx).pop();
-                },
-                child: Text('Apply')),
+              controller: curController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: 'Current'),
+            ),
+            TextField(
+              controller: maxController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: 'Max'),
+            ),
           ],
-        );
-      }),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(), child: Text('Cancel')),
+          TextButton(
+              onPressed: () {
+                final newCur = int.tryParse(curController.text) ?? cur;
+                final newMax = int.tryParse(maxController.text) ?? max;
+                HpStore.instance.setHp(newCur, newMax);
+                Navigator.of(ctx).pop();
+              },
+              child: Text('Save'))
+        ],
+      ),
     );
-  }
 
-  Future<void> _showHpLog(BuildContext context) async {
-    await showDialog<void>(
-        context: context,
-        builder: (ctx) {
-          return AlertDialog(
-            title: Text('HP Log'),
-            content: SizedBox(
-                width: 360,
-                child: AnimatedBuilder(
-                    animation: HpStore.instance,
-                    builder: (_, __) {
-                      final log = HpStore.instance.log;
-                      if (log.isEmpty) return Text('No entries');
-                      return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: log
-                              .map((e) => ListTile(
-                                  title: Text('${e.type} ${e.delta}'),
-                                  subtitle:
-                                      Text('${e.when} — before ${e.before}')))
-                              .toList());
-                    })),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text('Close')),
-              TextButton(
-                  onPressed: () {
-                    final undone = HpStore.instance.undoLast();
-                    Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content:
-                            Text(undone ? 'Undid last' : 'Nothing to undo')));
-                  },
-                  child: Text('Undo last'))
-            ],
-          );
-        });
+    setState(() {});
   }
 
   @override
@@ -537,17 +304,57 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                         ? null
                                         : () async {
                                             final selected =
-                                                await showDialog<DnDClass>(
-                                                    context: context,
-                                                    builder: (_) =>
-                                                        ClassSelectorMenu(
-                                                            classes:
-                                                                _classList!,
-                                                            onSelected: (c) =>
-                                                                Navigator.of(
-                                                                        context)
-                                                                    .pop(c)));
-                                            if (selected != null)
+                                                await showUnifiedSelector<
+                                                    DnDClass>(
+                                              context: context,
+                                              title: 'Select a Class',
+                                              items: _classList!,
+                                              titleBuilder: (c) => Text(c.name,
+                                                  style: TextStyle(
+                                                      color: Colors.white)),
+                                              detailsBuilder: (c) => Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  if (c.description.isNotEmpty)
+                                                    Text(c.description,
+                                                        style: TextStyle(
+                                                            color: Colors
+                                                                .white70)),
+                                                  SizedBox(height: 8),
+                                                  if (c.primaryAbility
+                                                      .isNotEmpty)
+                                                    Text(
+                                                        'Primary: ${c.primaryAbility.join(', ')}',
+                                                        style: TextStyle(
+                                                            color: Colors
+                                                                .white70)),
+                                                  if (c.savingThrowProficiencies
+                                                      .isNotEmpty)
+                                                    Text(
+                                                        'Saves: ${c.savingThrowProficiencies.join(', ')}',
+                                                        style: TextStyle(
+                                                            color: Colors
+                                                                .white70)),
+                                                  if (c.skillProficiencies
+                                                      .isNotEmpty)
+                                                    Text(
+                                                        'Skills: ${c.skillProficiencies.join(', ')}',
+                                                        style: TextStyle(
+                                                            color: Colors
+                                                                .white70)),
+                                                  if (c.startingEquipment
+                                                      .isNotEmpty)
+                                                    Text(
+                                                        'Starting: ${c.startingEquipment}',
+                                                        style: TextStyle(
+                                                            color: Colors
+                                                                .white70)),
+                                                ],
+                                              ),
+                                            );
+
+                                            if (selected != null) {
                                               setState(() {
                                                 _selectedClass = selected;
                                                 _selectedClassName =
@@ -555,6 +362,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                                 _recalculateHp(
                                                     preserveCurrent: false);
                                               });
+                                            }
                                           },
                                     child: Text(_selectedClassName ??
                                         (_classList == null
@@ -577,21 +385,41 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                         ? null
                                         : () async {
                                             final selected =
-                                                await showDialog<DnDRace>(
-                                                    context: context,
-                                                    builder: (_) =>
-                                                        RaceSelectorMenu(
-                                                            races: _raceList!,
-                                                            onSelected: (r) =>
-                                                                Navigator.of(
-                                                                        context)
-                                                                    .pop(r)));
-                                            if (selected != null)
+                                                await showUnifiedSelector<
+                                                    DnDRace>(
+                                              context: context,
+                                              title: 'Select a Race',
+                                              items: _raceList!,
+                                              titleBuilder: (r) => Text(r.name,
+                                                  style: TextStyle(
+                                                      color: Colors.white)),
+                                              detailsBuilder: (r) => Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  if (r.description.isNotEmpty)
+                                                    Text(r.description,
+                                                        style: TextStyle(
+                                                            color: Colors
+                                                                .white70)),
+                                                  SizedBox(height: 8),
+                                                  if (r.traits.isNotEmpty)
+                                                    Text(
+                                                        'Traits: ${r.traits.keys.join(', ')}',
+                                                        style: TextStyle(
+                                                            color: Colors
+                                                                .white70)),
+                                                ],
+                                              ),
+                                            );
+
+                                            if (selected != null) {
                                               setState(() {
                                                 _selectedRace = selected;
                                                 _selectedRaceName =
                                                     selected.name;
                                               });
+                                            }
                                           },
                                     child: Text(_selectedRaceName ??
                                         (_raceList == null
