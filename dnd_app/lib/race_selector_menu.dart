@@ -46,7 +46,7 @@ class _RaceSelectorMenuState extends State<RaceSelectorMenu> {
       key: key,
       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.blueGrey[800]?.withOpacity(0.9),
+        color: Colors.blueGrey[800]?.withAlpha((0.9 * 255).round()),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(

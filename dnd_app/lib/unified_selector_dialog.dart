@@ -54,7 +54,8 @@ class _UnifiedSelectorBody<T> extends StatefulWidget {
       : super(key: key);
 
   @override
-  State<_UnifiedSelectorBody<T>> createState() => _UnifiedSelectorBodyState<T>();
+  State<_UnifiedSelectorBody<T>> createState() =>
+      _UnifiedSelectorBodyState<T>();
 }
 
 class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
@@ -70,7 +71,10 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
             children: [
               Expanded(
                 child: Text(widget.title,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
               ),
               IconButton(
                 icon: Icon(Icons.close, color: Colors.white),
@@ -82,7 +86,9 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
         Divider(height: 1, color: Colors.white24),
         Expanded(
           child: widget.items.isEmpty
-              ? Center(child: Text('No items', style: TextStyle(color: Colors.white70)))
+              ? Center(
+                  child:
+                      Text('No items', style: TextStyle(color: Colors.white70)))
               : ListView.builder(
                   padding: EdgeInsets.symmetric(vertical: 8),
                   itemCount: widget.items.length,
@@ -93,7 +99,8 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
                       key: ValueKey(index),
                       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.blueGrey[800]?.withOpacity(0.9),
+                        color: Colors.blueGrey[800]
+                            ?.withAlpha((0.9 * 255).round()),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Column(
@@ -103,7 +110,11 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
                             title: widget.titleBuilder(item),
                             subtitle: null,
                             trailing: IconButton(
-                              icon: Icon(expanded ? Icons.expand_less : Icons.expand_more, color: Colors.white),
+                              icon: Icon(
+                                  expanded
+                                      ? Icons.expand_less
+                                      : Icons.expand_more,
+                                  color: Colors.white),
                               onPressed: () => setState(() {
                                 _expandedIndex = expanded ? null : index;
                               }),
@@ -114,7 +125,8 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
                           ),
                           if (expanded && widget.detailsBuilder != null)
                             Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
                               child: widget.detailsBuilder!(item),
                             ),
                           if (expanded)
@@ -122,8 +134,11 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 ElevatedButton(
-                                  onPressed: () => Navigator.of(context).pop(item),
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey[700], foregroundColor: Colors.white),
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(item),
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueGrey[700],
+                                      foregroundColor: Colors.white),
                                   child: Text('Select'),
                                 ),
                                 SizedBox(width: 12),

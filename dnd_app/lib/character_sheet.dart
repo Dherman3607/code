@@ -184,7 +184,7 @@ class _CharacterSheetState extends State<CharacterSheet> {
   }
 
   Widget _sectionCard({required String title, required Widget child}) => Card(
-        color: Colors.blueGrey[800]?.withOpacity(0.9),
+        color: Colors.blueGrey[800]?.withAlpha((0.9 * 255).round()),
         margin: EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         child: Padding(

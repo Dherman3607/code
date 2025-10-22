@@ -60,7 +60,7 @@ class MoneyEquipmentPage extends StatelessWidget {
       child: Column(
         children: [
           Card(
-            color: Colors.blueGrey[800]?.withOpacity(0.9),
+            color: Colors.blueGrey[800]?.withAlpha((0.9 * 255).round()),
             margin: EdgeInsets.symmetric(vertical: 8, horizontal: 6),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -96,7 +96,7 @@ class MoneyEquipmentPage extends StatelessWidget {
 
           // Equipment section
           Card(
-            color: Colors.blueGrey[800]?.withOpacity(0.9),
+            color: Colors.blueGrey[800]?.withAlpha((0.9 * 255).round()),
             margin: EdgeInsets.symmetric(vertical: 8, horizontal: 6),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
