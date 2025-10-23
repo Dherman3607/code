@@ -60,6 +60,7 @@ class _UnifiedSelectorBody<T> extends StatefulWidget {
 
 class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
   int? _expandedIndex;
+  int? _selectedIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -95,12 +96,17 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
                   itemBuilder: (ctx, index) {
                     final item = widget.items[index];
                     final expanded = _expandedIndex == index;
+                    final isSelected = _selectedIndex == index;
                     return Container(
                       key: ValueKey(index),
-                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.blueGrey[800]
-                            ?.withAlpha((0.9 * 255).round()),
+                        color: isSelected
+                            ? Colors.blueGrey[700]
+                                ?.withAlpha((0.95 * 255).round())
+                            : Colors.blueGrey[800]
+                                ?.withAlpha((0.9 * 255).round()),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Column(
@@ -120,6 +126,8 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
                               }),
                             ),
                             onTap: () => setState(() {
+                              // select the tapped item and toggle expansion
+                              _selectedIndex = index;
                               _expandedIndex = expanded ? null : index;
                             }),
                           ),
@@ -129,26 +137,48 @@ class _UnifiedSelectorBodyState<T> extends State<_UnifiedSelectorBody<T>> {
                                   horizontal: 16, vertical: 8),
                               child: widget.detailsBuilder!(item),
                             ),
-                          if (expanded)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(item),
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blueGrey[700],
-                                      foregroundColor: Colors.white),
-                                  child: const Text('Select'),
-                                ),
-                                const SizedBox(width: 12),
-                              ],
-                            ),
+                          // per-item select button removed in favor of bottom actions
                         ],
                       ),
                     );
                   },
                 ),
+        ),
+        // Bottom action bar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: Colors.white12)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white24),
+                    backgroundColor: Colors.transparent,
+                  ),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _selectedIndex == null
+                      ? null
+                      : () => Navigator.of(context)
+                          .pop(widget.items[_selectedIndex!]),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey[700],
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Select'),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
