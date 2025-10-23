@@ -135,13 +135,23 @@ class _CharacterSheetState extends State<CharacterSheet> {
           if (b.description.isNotEmpty)
             Text(b.description, style: const TextStyle(color: Colors.white70)),
           const SizedBox(height: 8),
-          if (b.raw['skillProficiencies'] != null)
-            Text('Skills: ${(b.raw['skillProficiencies'] as List).join(', ')}',
+          if (b.raw['skillProficiencies'] != null) ...[
+            const Text('Skills:',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
+            Text((b.raw['skillProficiencies'] as List).join(', '),
                 style: const TextStyle(color: Colors.white70)),
-          if (b.raw['equipment'] != null)
+          ],
+          if (b.raw['equipment'] != null) ...[
+            const Text('Equipment:',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
             Text(
-                'Equipment: ${(b.raw['equipment'] is List) ? (b.raw['equipment'] as List).join(', ') : b.raw['equipment'].toString()}',
+                (b.raw['equipment'] is List)
+                    ? (b.raw['equipment'] as List).join(', ')
+                    : b.raw['equipment'].toString(),
                 style: const TextStyle(color: Colors.white70)),
+          ],
         ],
       ),
     );
@@ -378,33 +388,74 @@ class _CharacterSheetState extends State<CharacterSheet> {
                                                                 .white70)),
                                                   const SizedBox(height: 8),
                                                   if (c.primaryAbility
-                                                      .isNotEmpty)
+                                                      .isNotEmpty) ...[
+                                                    const Text('Primary:',
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                Colors.white)),
                                                     Text(
-                                                        'Primary: ${c.primaryAbility.join(', ')}',
+                                                        c.primaryAbility
+                                                            .map((s) =>
+                                                                s[0].toUpperCase() +
+                                                                s.substring(1))
+                                                            .join(', '),
                                                         style: const TextStyle(
                                                             color: Colors
                                                                 .white70)),
+                                                  ],
                                                   if (c.savingThrowProficiencies
-                                                      .isNotEmpty)
+                                                      .isNotEmpty) ...[
+                                                    const Text('Saves:',
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                Colors.white)),
                                                     Text(
-                                                        'Saves: ${c.savingThrowProficiencies.join(', ')}',
+                                                        c.savingThrowProficiencies
+                                                            .join(', '),
                                                         style: const TextStyle(
                                                             color: Colors
                                                                 .white70)),
+                                                  ],
                                                   if (c.skillProficiencies
-                                                      .isNotEmpty)
+                                                      .isNotEmpty) ...[
+                                                    const Text('Skills:',
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                Colors.white)),
                                                     Text(
-                                                        'Skills: ${c.skillProficiencies.join(', ')}',
+                                                        c.skillProficiencies
+                                                            .join(', '),
                                                         style: const TextStyle(
                                                             color: Colors
                                                                 .white70)),
+                                                  ],
                                                   if (c.startingEquipment
-                                                      .isNotEmpty)
+                                                      .isNotEmpty) ...[
+                                                    const Text(
+                                                        'Starting Equipment:',
+                                                        style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                Colors.white)),
                                                     Text(
-                                                        'Starting: ${c.startingEquipment}',
+                                                        c.startingEquipment
+                                                            .replaceAllMapped(
+                                                                RegExp(
+                                                                    r"\(A\)|\(B\)|\(C\)"),
+                                                                (m) =>
+                                                                    "\n${m[0]}"),
                                                         style: const TextStyle(
                                                             color: Colors
                                                                 .white70)),
+                                                    const SizedBox(height: 12),
+                                                  ],
                                                 ],
                                               ),
                                             );
