@@ -33,3 +33,7 @@ pubspec.lock
 # JetBrains
 *.iml
 .idea/
+
+# Ignore data exports used at runtime (large JSON files)
+lib/Data/
+Data/
