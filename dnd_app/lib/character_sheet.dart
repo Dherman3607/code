@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'classes.dart';
 import 'races.dart';
+import 'data_assets.dart';
 import 'utils/trait_formatter.dart';
 import 'hp_store.dart';
 import 'backgrounds.dart';
@@ -52,7 +53,24 @@ class _CharacterSheetState extends State<CharacterSheet> {
   int _pageIndex = 0;
 
   Future<void> _loadClasses() async {
+    // Try to find any assets under lib/Data/ via AssetManifest. If found, try each
+    // JSON asset until some classes are loaded. Fallback to the original path.
     try {
+      final assets = await DataAssets.listDataAssets();
+      for (final a in assets) {
+        try {
+          final loaded = await DnDClassLoader.loadClasses(a);
+          if (loaded.isNotEmpty) {
+            _classList = loaded;
+            setState(() {});
+            return;
+          }
+        } catch (_) {
+          // ignore and try next asset
+        }
+      }
+
+      // fallback to the single hard-coded asset name used previously
       _classList = await DnDClassLoader.loadClasses(
           'lib/Data/dnd-export-complete-2025-10-10.json');
       setState(() {});
@@ -63,19 +81,43 @@ class _CharacterSheetState extends State<CharacterSheet> {
 
   Future<void> _loadRaces() async {
     try {
-      _raceList = await DnDRaceLoader.loadRaces(
-          'lib/Data/dnd-export-complete-2025-10-10.json');
-      setState(() {});
+      final assets = await DataAssets.listDataAssets();
+      for (final a in assets) {
+        try {
+          final loaded = await DnDRaceLoader.loadRaces(a);
+          if (loaded.isNotEmpty) {
+            _raceList = loaded;
+            setState(() {});
+            break;
+          }
+        } catch (_) {}
+      }
+
+      // backgrounds: try assets too
+      for (final a in assets) {
+        try {
+          final loaded = await DnDBackgroundLoader.loadBackgrounds(a);
+          if (loaded.isNotEmpty) {
+            _backgroundList = loaded;
+            setState(() {});
+            break;
+          }
+        } catch (_) {}
+      }
+
+      // fallback single file
+      if (_raceList == null) {
+        _raceList = await DnDRaceLoader.loadRaces(
+            'lib/Data/dnd-export-complete-2025-10-10.json');
+        setState(() {});
+      }
+      if (_backgroundList == null) {
+        _backgroundList = await DnDBackgroundLoader.loadBackgrounds(
+            'lib/Data/dnd-export-complete-2025-10-10.json');
+        setState(() {});
+      }
     } catch (_) {
-      // ignore races load errors
-    }
-    // also load backgrounds if available
-    try {
-      _backgroundList = await DnDBackgroundLoader.loadBackgrounds(
-          'lib/Data/dnd-export-complete-2025-10-10.json');
-      setState(() {});
-    } catch (_) {
-      // ignore background load errors
+      // ignore races/background load errors
     }
   }
 

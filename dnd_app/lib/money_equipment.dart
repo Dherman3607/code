@@ -1,12 +1,35 @@
 import 'package:flutter/material.dart';
 
-class MoneyEquipmentPage extends StatelessWidget {
-  final TextEditingController ppController = TextEditingController(text: '0');
-  final TextEditingController gpController = TextEditingController(text: '0');
-  final TextEditingController spController = TextEditingController(text: '0');
-  final TextEditingController cpController = TextEditingController(text: '0');
+class MoneyEquipmentPage extends StatefulWidget {
+  const MoneyEquipmentPage({Key? key}) : super(key: key);
 
-  MoneyEquipmentPage({Key? key}) : super(key: key);
+  @override
+  State<MoneyEquipmentPage> createState() => _MoneyEquipmentPageState();
+}
+
+class _MoneyEquipmentPageState extends State<MoneyEquipmentPage> {
+  late final TextEditingController ppController;
+  late final TextEditingController gpController;
+  late final TextEditingController spController;
+  late final TextEditingController cpController;
+
+  @override
+  void initState() {
+    super.initState();
+    ppController = TextEditingController(text: '0');
+    gpController = TextEditingController(text: '0');
+    spController = TextEditingController(text: '0');
+    cpController = TextEditingController(text: '0');
+  }
+
+  @override
+  void dispose() {
+    ppController.dispose();
+    gpController.dispose();
+    spController.dispose();
+    cpController.dispose();
+    super.dispose();
+  }
 
   Color _platinumColor() => const Color(0xFFE6E6EA);
   Color _goldColor() => const Color(0xFFFFD54F);
@@ -100,24 +123,24 @@ class MoneyEquipmentPage extends StatelessWidget {
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            child: const Padding(
-              padding: EdgeInsets.all(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Equipment',
+                  const Text('Equipment',
                       style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.white)),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   TextField(
                     maxLines: 8,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                         hintText: 'List items, one per line',
                         hintStyle: TextStyle(color: Colors.white54),
                         border: InputBorder.none),
-                    style: TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.white),
                   )
                 ],
               ),
